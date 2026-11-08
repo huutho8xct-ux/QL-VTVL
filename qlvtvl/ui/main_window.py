@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import os
+import re
+import unicodedata
 from datetime import datetime
 
 from PySide6.QtCore import QSettings, QSize, QTimer
@@ -17,6 +19,11 @@ from ..core.db import Project, app_data_dir
 from ..core.guide import STEPS
 from ..core.seed import ensure_defaults, load_sample
 from .pages import CheckPage, DashboardPage, HelpPage, InfoPage, LegalPage, StepPage
+
+def unidecode_vn(text: str) -> str:
+    text = text.replace("Đ", "D").replace("đ", "d")
+    return "".join(c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn")
+
 
 APP_NAME = "Phần mềm rà soát vị trí việc làm"
 ORG = "Thư viện thành phố Cần Thơ"
@@ -35,7 +42,7 @@ class WelcomeDialog(QDialog):
         t.setObjectName("PageTitle")
         t.setWordWrap(True)
         v.addWidget(t)
-        s = QLabel("Thực hiện theo 08 bước, 09 biểu nghiệp vụ của Hướng dẫn 07-HD/BTCTW ngày 19/10/2026 "
+        s = QLabel("Thực hiện theo 08 bước và Bộ biểu Excel kèm Hướng dẫn số 7-HD/BTCTW ngày 19/10/2026 "
                    "của Ban Tổ chức Trung ương. Chọn cách bắt đầu:")
         s.setWordWrap(True)
         s.setObjectName("PageSub")
@@ -84,11 +91,11 @@ class MainWindow(QMainWindow):
         self._act(m, "Lưu thành (sao lưu)...", self.save_as, QKeySequence("Ctrl+Shift+S"))
         self._act(m, "Mở hồ sơ dữ liệu minh họa", self.open_sample)
         m.addSeparator()
-        self._act(m, "Nhập toàn bộ 09 biểu từ Excel...", self.import_all)
+        self._act(m, "Nhập từ Bộ biểu Excel chính thức (đã điền)...", self.import_all)
         m.addSeparator()
         self._act(m, "Thoát", self.close, QKeySequence("Ctrl+Q"))
         x = mb.addMenu("&Xuất báo cáo")
-        self._act(x, "Bộ 09 biểu nghiệp vụ (Excel)...", self.export_excel, QKeySequence("Ctrl+E"))
+        self._act(x, "Xuất vào Bộ biểu Excel chính thức...", self.export_excel, QKeySequence("Ctrl+E"))
         self._act(x, "Báo cáo thuyết minh (Word)...", self.export_word, QKeySequence("Ctrl+W"))
         h = mb.addMenu("Trợ &giúp")
         self._act(h, "Hướng dẫn sử dụng", lambda: self.go(len(self.pages) - 1), QKeySequence.HelpContents)
@@ -320,18 +327,30 @@ class MainWindow(QMainWindow):
     def export_excel(self):
         if not self._confirm_errors():
             return
-        path = self._export_path("Xuất Bộ 09 biểu", f"Bo09Bieu_VTVL_{datetime.now():%Y%m%d}.xlsx", "Excel (*.xlsx)")
+        unit = re.sub(r"[^A-Za-z0-9]+", "", unidecode_vn(self.project.meta().get("ten_don_vi", ""))) or "DonVi"
+        path = self._export_path("Xuất vào Bộ biểu Excel chính thức",
+                                 f"BoBieu_VTVL_{unit}_{datetime.now():%Y%m%d}.xlsx", "Excel (*.xlsx)")
         if not path:
             return
         if not path.lower().endswith(".xlsx"):
             path += ".xlsx"
-        from ..core.exporter import export_excel
+        from ..core.exporter import export_official
         try:
-            export_excel(self.project, path)
+            info = export_official(self.project, path)
         except PermissionError:
             QMessageBox.critical(self, "Lỗi", "Không ghi được tệp. Hãy đóng tệp nếu đang mở trong Excel.")
             return
-        self._done(path)
+        except Exception as e:  # noqa: BLE001
+            QMessageBox.critical(self, "Lỗi", f"Không xuất được bộ biểu: {e}")
+            return
+        extra = ""
+        if info.get("fixed"):
+            extra += (f"\n\nĐã tự sửa {info['fixed']} ô công thức lỗi của bản phát hành (tham chiếu tệp ngoài, "
+                      "chuỗi thông báo bị đánh số, tên QUY_GIO_PP2 bị lệch).")
+        if info.get("overflow"):
+            extra += "\n\nVượt sức chứa bộ biểu: " + ", ".join(f"{k}: {v} dòng" for k, v in info["overflow"].items()) + \
+                     " (đã ghi giá trị tính sẵn; báo đầu mối hỗ trợ kỹ thuật)."
+        self._done(path, extra)
 
     def export_word(self):
         if not self._confirm_errors():
@@ -350,10 +369,10 @@ class MainWindow(QMainWindow):
             return
         self._done(path)
 
-    def _done(self, path):
+    def _done(self, path, extra=""):
         box = QMessageBox(self)
         box.setWindowTitle("Hoàn tất")
-        box.setText(f"Đã xuất tệp:\n{path}")
+        box.setText(f"Đã xuất tệp:\n{path}{extra}")
         open_btn = box.addButton("Mở tệp", QMessageBox.AcceptRole)
         box.addButton("Đóng", QMessageBox.RejectRole)
         box.exec()
@@ -361,15 +380,15 @@ class MainWindow(QMainWindow):
             self._open_folder(path)
 
     def import_all(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Nhập 09 biểu từ Excel", "", "Excel (*.xlsx)")
+        path, _ = QFileDialog.getOpenFileName(self, "Nhập từ Bộ biểu Excel chính thức", "", "Excel (*.xlsx)")
         if not path:
             return
         if QMessageBox.question(self, "Xác nhận", "Dữ liệu các biểu có trong tệp sẽ thay thế dữ liệu hiện tại. "
                                 "Nên sao lưu hồ sơ trước. Tiếp tục?") != QMessageBox.Yes:
             return
-        from ..core.exporter import import_excel
+        from ..core.exporter import import_official
         try:
-            res = import_excel(self.project, path)
+            res = import_official(self.project, path)
         except Exception as e:  # noqa: BLE001
             QMessageBox.critical(self, "Lỗi", f"Không đọc được tệp: {e}")
             return
@@ -390,7 +409,8 @@ class MainWindow(QMainWindow):
             f"<p>Đơn vị sử dụng: <b>{ORG}</b></p>"
             "<p>Hỗ trợ rà soát, hoàn thiện vị trí việc làm, xác định nhu cầu nhân lực và xây dựng phương án "
             "số lượng người làm việc giai đoạn 2027 - 2031 theo <b>Hướng dẫn số 07-HD/BTCTW ngày 19/10/2026</b> "
-            "của Ban Tổ chức Trung ương (08 bước, 09 biểu nghiệp vụ A1 - D2), Luật Viên chức 2025, "
+            "của Ban Tổ chức Trung ương (08 bước, Bộ biểu Excel 19-10-2026: A1, A2, B1, B2, C1, C2, C3, D1, D2), "
+            "Kết luận 107-KL/TW, Nghị định 232/2026/NĐ-CP, Luật Viên chức 2025, "
             "Nghị định 106/2020/NĐ-CP và Thông tư 10/2023/TT-BVHTTDL.</p>"
             "<p>Dữ liệu lưu cục bộ trên máy tính, không gửi ra ngoài.</p>")
 

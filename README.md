@@ -1,7 +1,9 @@
 # QL-VTVL – Phần mềm rà soát vị trí việc làm
 ### Thư viện thành phố Cần Thơ
 
-Phần mềm chạy trên máy tính Windows, hỗ trợ **rà soát, hoàn thiện vị trí việc làm, xác định nhu cầu nhân lực và xây dựng phương án số lượng người làm việc giai đoạn 2027 – 2031**. Phần mềm làm theo **Hướng dẫn số 07-HD/BTCTW ngày 19/10/2026 của Ban Tổ chức Trung ương** (08 bước, 09 biểu nghiệp vụ A1 – D2) và các văn bản mới nhất về vị trí việc làm.
+Phần mềm cài trên Windows, hỗ trợ **rà soát, hoàn thiện vị trí việc làm, xác định nhu cầu nhân lực và xây dựng phương án biên chế giai đoạn 2027 – 2031**. Phần mềm làm theo **Hướng dẫn số 7-HD/BTCTW ngày 19/10/2026 của Ban Tổ chức Trung ương** (thực hiện Kết luận số 107-KL/TW ngày 17/10/2026 của Bộ Chính trị), kèm Bộ phụ lục I–VIII và **Bộ biểu Excel 19-10-2026**.
+
+Phần mềm dùng **đúng tên cột, ký hiệu cột, danh sách lựa chọn, công thức và cảnh báo** của Bộ biểu chính thức. Kết quả tính đã được đối chiếu tự động với chính Bộ biểu trên 1.857 ô công thức: không có sai lệch. Khi xuất, dữ liệu được ghi **thẳng vào file Excel chính thức** để gửi theo đầu mối quy định.
 
 ![Tổng quan](docs/images/tong-quan.png)
 
@@ -9,69 +11,73 @@ Phần mềm chạy trên máy tính Windows, hỗ trợ **rà soát, hoàn thi�
 
 ## 1. Cài đặt trên Windows
 
-**Yêu cầu:** Windows 10 hoặc 11, 64-bit. Không cần cài Python, không cần Internet, không cần quyền quản trị.
+**Yêu cầu:** Windows 10 hoặc 11, 64-bit. Không cần Python, không cần Internet, không cần quyền quản trị.
 
-1. Tải tệp **`CaiDat_QL-VTVL_1.0.0.exe`**:
-   - từ mục **Releases** của kho mã, hoặc
-   - từ mục **Actions → Đóng gói bộ cài Windows →** lần chạy mới nhất **→ Artifacts → `QL-VTVL-Windows`**.
-2. Nhấp đúp tệp cài đặt và làm theo hướng dẫn (*Tiếp theo → Cài đặt*). Nếu Windows SmartScreen cảnh báo, chọn **More info → Run anyway** (phần mềm nội bộ, chưa ký số).
-3. Mở phần mềm từ biểu tượng **QL-VTVL** trên màn hình nền hoặc menu Start.
+1. Tải **`CaiDat_QL-VTVL_1.1.0.exe`** tại mục **Actions → Đóng gói bộ cài Windows →** lần chạy mới nhất **→ Artifacts → `QL-VTVL-Windows`** (hoặc tại mục **Releases** nếu đã phát hành).
+2. Nhấp đúp tệp cài đặt và làm theo hướng dẫn. Nếu Windows SmartScreen cảnh báo, chọn **More info → Run anyway**: đây là phần mềm nội bộ, chưa ký số.
+3. Mở phần mềm từ biểu tượng **QL-VTVL**.
 
-> Không muốn cài đặt? Dùng bản **`QL-VTVL_portable.zip`**: giải nén rồi chạy `QL-VTVL.exe`.
+> Bản **`QL-VTVL_portable.zip`** không cần cài: giải nén rồi chạy `QL-VTVL.exe`.
 
-## 2. Quy trình 08 bước trong phần mềm
+## 2. Quy trình 08 bước (Mục II Hướng dẫn 7-HD/BTCTW)
 
-| Bước | Nội dung | Biểu |
+| Bước | Nội dung | Biểu (trang tính trong Bộ biểu) |
 |---|---|---|
-| 1 | Rà soát chức năng, nhiệm vụ | **A1** – Danh mục nhiệm vụ |
-| 2 | Xác định công việc và sản phẩm | **A2** – Công việc và sản phẩm |
-| 3 | Xác định khối lượng, thời gian thực hiện | **B1** – Khối lượng và thời gian thực hiện công việc |
-| 4 | Đánh giá tác động chuyển đổi số, tự chủ, thuê dịch vụ, xã hội hóa | **B2** – Tác động của chuyển đổi số, tự chủ, thuê dịch vụ và xã hội hóa |
-| 5 | Rà soát danh mục vị trí việc làm, mô tả công việc, khung năng lực | **C1** – Danh mục VTVL; **C2** – Bản mô tả công việc và khung năng lực |
-| 6 | Xác định nhu cầu nhân lực theo vị trí việc làm (PP1/PP2/PP3) | **C3** – Xác định nhu cầu nhân lực |
-| 7 | Đối chiếu nhân lực hiện có, xây dựng phương án | **D1** – Đối chiếu nguồn nhân lực hiện có; **D2** – Phương án biên chế 2027 – 2031 |
-| 8 | Kiểm tra, xác nhận và gửi kết quả | Kiểm tra tự động, xuất Excel/Word |
+| 1 | Rà soát chức năng, nhiệm vụ và dữ liệu đã kê khai | **A1** – Nhiệm vụ (`1. A1_NhiemVu`) |
+| 2 | Xác định công việc, công đoạn và sản phẩm | **A2** – Công việc (`2. A2_CongViec`) |
+| 3 | Xác định số lượng sản phẩm và thời gian thực hiện | **B1** – Khối lượng (`3. B1_KhoiLuong`); Danh mục sản phẩm (`11. DM_SAN_PHAM`) |
+| 4 | Thay đổi do chuyển đổi số, tự chủ, thuê dịch vụ, xã hội hóa | **B2** chi tiết (`4. B2_CT_TacDong`) và tổng hợp tự động (`5. B2_ThayDoi`) |
+| 5 | Hoàn thiện danh mục VTVL, bản mô tả, khung năng lực | **C1** – VTVL, quỹ giờ PP2 (`6. C1_VTVL`); **C2** – Năng lực (`7. C2_NangLuc`) |
+| 6 | Xác định số người cần thiết theo từng VTVL | **C3** – Nhu cầu (`8. C3_NhuCau`) |
+| 7 | Đối chiếu nhân lực hiện có, xây dựng phương án | **D1** – Nhân lực (`9. D1_NhanLuc`); Dự báo (`DU_BAO_5_NAM`); **D2** – Phương án (`10. D2_PhuongAn`) |
+| 8 | Kiểm tra, xác nhận và gửi kết quả | Kiểm tra tự động (Phụ lục VI); xuất Bộ biểu Excel và báo cáo Word |
 
-Mỗi bước có **phần hướng dẫn nghiệp vụ** ở trên và **bảng nhập liệu** ở dưới. Thanh bên trái đánh dấu tiến độ từng bước: ⚪ chưa bắt đầu, 🟡 đang thực hiện, ✅ hoàn thành.
+Kỳ thống kê là **01/10/2025 – 30/9/2026**. Nhân lực hiện có chốt ngày **30/9/2026**.
+
+![Biểu B1](docs/images/bieu-b1.png)
+
+### Tính toán giống Bộ biểu
+- **B1:** Phút/SP dùng để tính ưu tiên phút chuẩn đã xác nhận trong danh mục, nếu không có thì lấy số đo thực tế. Giờ SP = Số SP × Phút/SP ÷ 60. Giờ tổng = Giờ SP + Giờ bổ sung. Cột **Cảnh báo dữ liệu** phải là **ĐẠT** thì dòng mới được chuyển sang C3.
+- **B2:** Giờ giảm = SP áp dụng × (Phút trước − Phút sau) ÷ 60. Kiểm tra trạng thái, đối chiếu trùng và các mức vượt B1. Giờ tác động ròng = Giờ việc mới − Giờ giảm hợp lệ.
+- **C1:** Quỹ giờ PP2 là mức chung 1.904 giờ. Chế độ đặc thù dùng giờ riêng nếu đã được kiểm chứng.
+- **C3:** Giờ ròng = Giờ B1 + Giờ tác động B2. **Người quy đổi PP2 = Giờ ròng ÷ Quỹ giờ.** Ví dụ trong Hướng dẫn: 2.600 ÷ 1.904 ≈ 1,366 người, **không tự làm tròn** thành biên chế. Ô cảnh báo theo đúng chuỗi kiểm tra của Bộ biểu.
+- **D1:** Giờ quy đổi của từng người, cảnh báo vượt quỹ giờ, trùng mã, thiếu nơi tính biên chế.
+- **Dự báo và D2:** Người cần bố trí từng năm = Người C3 (đã kiểm chứng) + Biến động. D2 có cảnh báo, kiểm soát đối chiếu và trạng thái thẩm định/quyết định.
 
 ![Biểu C3](docs/images/bieu-c3.png)
 
-### Tính toán tự động
-- **B1:** Tổng giờ = Số lượng sản phẩm/năm × Thời gian lao động trực tiếp/1 sản phẩm.
-- **C3 (PP2):** Số người quy đổi = (Giờ B1 + Giờ điều chỉnh B2 của các công việc đảm nhận, theo tỷ lệ) ÷ Quỹ giờ 1 người/năm. Quỹ giờ mặc định là **1.904 giờ** (40 giờ/tuần), sửa được ở *Thông tin đơn vị*.
-  Ví dụ của Hướng dẫn: 2.600 giờ ÷ 1.904 ≈ **1,366 người**. Phần mềm giữ nguyên số lẻ, **không làm tròn cơ học**.
-- **PP1/PP3:** ghi số người theo định mức hoặc thẩm định, kèm giải trình, không gán số giờ giả định.
-- **D1:** Tổng hiện có, chênh lệch thừa (+) hoặc thiếu (−) so với nhu cầu.
-- **D2:** Nhu cầu và hiện có tự lấy từ C3, D1. Nút *Gợi ý lộ trình* đề xuất mức điều chỉnh dần qua các năm 2027 – 2031.
-
-### Kiểm tra tự động (Bước 8)
-Phần mềm phát hiện: thiếu dữ liệu bắt buộc, mã trùng, mã tham chiếu không tồn tại, nhiệm vụ chưa có công việc, công việc chưa có khối lượng hoặc chưa giao cho vị trí nào, công việc giao quá 100%, PP2 không có giờ, PP1/PP3 thiếu giải trình, quỹ giờ đặc thù chưa giải trình, đề xuất cao hơn kết quả tính do làm tròn, chênh lệch thừa/thiếu chưa giải trình, lộ trình vượt nhu cầu… Nhấp đúp vào từng dòng để đến đúng ô cần sửa.
+### Kiểm tra (Bước 8) và xuất hồ sơ
+- Liệt kê lỗi, cảnh báo và lưu ý từ các cột cảnh báo của Bộ biểu, cộng thêm kiểm tra liên kết giữa các biểu: mã chưa có, trùng mã, nhiệm vụ chưa phân rã, VTVL thiếu C2/C3, D2 chưa đủ 5 năm… Nhấp đúp vào từng dòng để đến đúng ô cần sửa.
+- **Xuất vào Bộ biểu Excel chính thức:** ghi các cột nhập liệu và giữ nguyên công thức, danh sách chọn, bảo vệ trang. Excel tự tính lại khi mở file.
+- **Báo cáo thuyết minh (Word):** gồm căn cứ, kết quả từng bước, bảng nhu cầu nhân lực, phương án 2027–2031 và **danh sách nội dung chưa đủ căn cứ** cần tiếp tục xử lý.
+- **Nhập từ Bộ biểu Excel:** kế thừa dữ liệu đã điền trong Bộ biểu chính thức, kể cả dữ liệu do cơ quan đầu mối chuyển theo Công văn 1972, 2209, 2342-CV/BTCTW.
 
 ![Kiểm tra](docs/images/kiem-tra.png)
 
-### Xuất hồ sơ
-- **Bộ 09 biểu (Excel):** mỗi biểu một trang tính. Có quốc hiệu, tên biểu, dòng "Kèm theo Hướng dẫn 07-HD/BTCTW", dòng tổng cộng và phần ký của người lập biểu và thủ trưởng đơn vị. Kèm trang *Tổng hợp* và trang *Kiểm tra*. Trang in khổ A4 ngang.
-- **Báo cáo thuyết minh (Word):** theo thể thức văn bản hành chính, gồm căn cứ, kết quả rà soát, danh mục vị trí việc làm, nhu cầu nhân lực, đối chiếu và phương án, kiến nghị.
-- **Nhập từ Excel:** nhập lại toàn bộ hoặc từng biểu từ tệp đã xuất. Có thể chia biểu cho từng phòng điền rồi tổng hợp lại.
+### Lỗi của bản Bộ biểu phát hành 19-10-2026 được phần mềm tự sửa khi xuất
+Bản Excel phát hành có một số công thức sai từ dòng 4 trở đi. Khi xuất, phần mềm dựng lại các công thức này theo đúng công thức dòng 3 (dòng chuẩn):
+
+| Vị trí | Lỗi | Hệ quả nếu dùng nguyên bản |
+|---|---|---|
+| `8. C3_NhuCau`!M4:M202 | Trỏ tới tệp ngoài `[1]`, `[2]`; logic lệch (PP2→PP3, PP3→PP4) | Cảnh báo C3 sai từ VTVL thứ 2 |
+| `10. D2_PhuongAn`!J4:J202 | Trỏ tới tệp ngoài `[399]`; chuỗi thông báo bị đánh số ("C4 CHƯA…") | Cảnh báo D2 sai |
+| `DU_BAO_5_NAM`!G4:G1002, I4:I1002 | Trỏ tới tệp ngoài; chuỗi thông báo bị đánh số | Dự báo năm không nhận C3 |
+| `6. C1_VTVL`!E35:E202 | Gọi tên `QUY_GIO_PP34`, `QUY_GIO_PP35`… thay vì `QUY_GIO_PP2` | Lỗi #NAME? từ VTVL thứ 33 |
+
+Ngoài ra, cột cảnh báo C3 của Bộ biểu chưa chấp nhận phương pháp `PP1+PP2+PP3`, dù danh sách chọn có. Phần mềm báo đúng như Bộ biểu. Nên phản ánh điểm này với đầu mối quản lý biểu.
 
 ## 3. Mẹo sử dụng
-- **Ctrl+N** thêm dòng · **Enter** mở cửa sổ chi tiết · **Delete** xóa · nhấp đúp hoặc gõ trực tiếp để sửa ô.
-- Ô nền **đỏ nhạt** là bắt buộc nhập. Ô nền **xanh nhạt** do phần mềm tự tính.
-- Các cột mã (nhiệm vụ, công việc, vị trí) được chọn từ danh sách. Khi đổi mã ở biểu gốc, các biểu liên quan tự cập nhật.
-- Biểu C3: nhấp đúp cột *Công việc đảm nhận* để chọn công việc và tỷ lệ % khi một công việc do nhiều vị trí cùng làm.
-- Biểu C2, C3, D1, D2: nút **⟳ Đồng bộ từ C1** tạo sẵn dòng cho mọi vị trí việc làm.
-- Dữ liệu **lưu tự động** vào tệp hồ sơ `.vtvl`. Dùng *Tệp → Lưu thành (sao lưu)* để giữ bản sao theo từng đợt rà soát.
-- *Tệp → Mở hồ sơ dữ liệu minh họa* mở bộ số liệu mẫu để làm quen. **Đây không phải số liệu chính thức.**
+- **Ctrl+N** thêm dòng · **Enter** mở chi tiết · **Delete** xóa · nhấp đúp hoặc gõ để sửa ô.
+- Ô nền **đỏ nhạt** là bắt buộc. Ô nền **xanh nhạt** là cột công thức (ô xám, đã khóa trong Bộ biểu). Mỗi tiêu đề cột có ký hiệu cột của Bộ biểu.
+- Nút trợ giúp: **Đồng bộ từ C1** (C2, C3), **Điền theo kết quả tính** (C3), **Gợi ý nhân lực từ C1** (D1), **Tạo dự báo** và **Tạo phương án 2027–2031**.
+- Khi Ban Tổ chức Trung ương phát hành phiên bản Bộ biểu mới: **Thông tin đơn vị → Mẫu Bộ biểu Excel → Chọn tệp mẫu khác**.
+- *Tệp → Mở hồ sơ dữ liệu minh họa* mở bộ số liệu **minh họa** của Thư viện TP Cần Thơ để làm quen. **Đây không phải số liệu chính thức.**
 
-## 4. Căn cứ pháp lý (cập nhật được trong phần mềm)
-- Hướng dẫn 07-HD/BTCTW ngày 19/10/2026 và Kế hoạch 71-KH/BTCTW của Ban Tổ chức Trung ương.
-- Luật Viên chức số 129/2025/QH15; Luật Cán bộ, công chức số 80/2025/QH15.
-- Nghị định 106/2020/NĐ-CP về vị trí việc làm và số lượng người làm việc trong đơn vị sự nghiệp công lập. Văn bản này tiếp tục được áp dụng trong khi chờ Nghị định hướng dẫn Luật Viên chức 2025.
-- Quy định 70-QĐ/TW về quản lý biên chế của hệ thống chính trị.
-- Luật Thư viện 2019; Thông tư 10/2023/TT-BVHTTDL; Thông tư 02/2022/TT-BVHTTDL; Thông tư 07/2023/TT-BVHTTDL.
-- Thông tư 12/2022/TT-BNV; Thông tư 29/2022/TT-BTC; Nghị định 111/2022/NĐ-CP.
-
-> Danh mục và nội dung hướng dẫn được tổng hợp tại thời điểm phát hành. Khi có văn bản mới, cập nhật tại mục **Căn cứ pháp lý** trong phần mềm và đối chiếu văn bản gốc trước khi gửi hồ sơ.
+## 4. Căn cứ (sửa được trong phần mềm)
+- Kết luận số 107-KL/TW ngày 17/10/2026 của Bộ Chính trị.
+- Hướng dẫn số 7-HD/BTCTW ngày 19/10/2026 của Ban Tổ chức Trung ương, kèm Phụ lục I–VIII, Bộ biểu Excel 19-10-2026, Hướng dẫn điền biểu, Cẩm nang VTVL.
+- Nghị định số 232/2026/NĐ-CP ngày 26/6/2026 (viên chức); Nghị định số 361/2025/NĐ-CP ngày 31/12/2025 (công chức); Hướng dẫn số 06-HD/BTCTW ngày 11/10/2026.
+- Luật Viên chức số 129/2025/QH15; Luật Thư viện 2019; Thông tư 07/2023/TT-BVHTTDL (định mức dịch vụ thư viện).
 
 ## 5. Dành cho cán bộ kỹ thuật
 
@@ -81,19 +87,17 @@ python run.py                 # chạy từ mã nguồn
 python -m pytest tests        # kiểm thử
 ```
 
-**Tự đóng gói trên Windows:** cài Python 3.11+ (64-bit) và [Inno Setup 6](https://jrsoftware.org/isinfo.php), rồi chạy `build_windows.bat`. Kết quả nằm ở `dist\installer\`.
+**Tự đóng gói trên Windows:** cài Python 3.11+ (64-bit) và Inno Setup 6, rồi chạy `build_windows.bat`.
 
-**Đóng gói tự động:** mỗi lần đẩy mã lên GitHub, workflow `.github/workflows/build-windows.yml` sẽ kiểm thử, đóng gói, chạy thử bản `.exe` và tạo bộ cài. Gắn tag `v1.0.0` để phát hành chính thức vào mục Releases.
+**Tự động trên GitHub:** workflow `.github/workflows/build-windows.yml` kiểm thử, đóng gói, chạy thử `.exe` và tạo bộ cài. Gắn tag `v1.1.0` để phát hành vào mục Releases.
 
-Cấu trúc mã nguồn:
 ```
-qlvtvl/core/forms.py     Đặc tả 09 biểu (cột, kiểu dữ liệu, danh mục lựa chọn)
-qlvtvl/core/guide.py     Nội dung hướng dẫn 08 bước, căn cứ pháp lý
-qlvtvl/core/calc.py      Công thức tính (B1, C3 – PP1/PP2/PP3, D1, D2)
-qlvtvl/core/checks.py    Kiểm tra tự động (Bước 8)
-qlvtvl/core/exporter.py  Xuất Excel/Word, nhập Excel
-qlvtvl/core/db.py        Lưu trữ SQLite (tệp .vtvl)
-qlvtvl/core/seed.py      Dữ liệu minh họa Thư viện TP Cần Thơ
-qlvtvl/ui/               Giao diện PySide6 (Qt)
-installer/qlvtvl.iss     Kịch bản bộ cài Inno Setup
+qlvtvl/core/forms.py     Đặc tả biểu theo Bộ biểu 19-10-2026 (cột, ký hiệu cột, danh sách chọn)
+qlvtvl/core/calc.py      Mô phỏng công thức Excel (B1, B2, C1, C3, D1, dự báo, D2)
+qlvtvl/core/checks.py    Kiểm tra (Bước 8, Phụ lục VI)
+qlvtvl/core/exporter.py  Xuất/nhập Bộ biểu Excel chính thức (tự sửa công thức lỗi), báo cáo Word
+qlvtvl/core/guide.py     Nội dung 08 bước, căn cứ pháp lý
+qlvtvl/core/seed.py      Dữ liệu minh họa
+qlvtvl/assets/           Bộ biểu Excel 19-10-2026, biểu tượng
+qlvtvl/ui/               Giao diện PySide6
 ```

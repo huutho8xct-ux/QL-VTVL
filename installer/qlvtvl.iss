@@ -4,7 +4,7 @@
 #define AppName "QL-VTVL - Rà soát vị trí việc làm"
 #define AppShort "QL-VTVL"
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "1.1.0"
 #endif
 #define AppPublisher "Thư viện thành phố Cần Thơ"
 #define AppExe "QL-VTVL.exe"

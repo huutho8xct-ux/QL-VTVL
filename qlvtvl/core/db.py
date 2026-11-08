@@ -17,7 +17,10 @@ DEFAULT_META = {
     "chuc_vu_nguoi_dung_dau": "Giám đốc",
     "nguoi_lap": "",
     "dien_thoai": "",
-    "ky_ra_soat": "Rà soát năm 2026 - giai đoạn 2027 - 2031",
+    "ky_ra_soat": "Rà soát theo Hướng dẫn số 7-HD/BTCTW - phương án 2027 - 2031",
+    "ky_thong_ke": "01/10/2025 - 30/9/2026",
+    "ngay_chot": "30/9/2026",
+    "bc_giao": "",
     "quy_gio": "1904",
 }
 

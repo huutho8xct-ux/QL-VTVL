@@ -5,7 +5,7 @@ from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPen
 from PySide6.QtWidgets import (
     QComboBox, QFormLayout, QFrame, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit,
-    QMessageBox, QPlainTextEdit, QPushButton, QSplitter, QTabWidget, QTableWidget,
+    QMessageBox, QPlainTextEdit, QPushButton, QScrollArea, QSplitter, QTabWidget, QTableWidget,
     QTableWidgetItem, QTextBrowser, QVBoxLayout, QWidget,
 )
 
@@ -39,6 +39,15 @@ def page_header(title: str, sub: str = "", badge: str = "") -> QWidget:
         v.addWidget(s)
     h.addLayout(v, 1)
     return w
+
+
+def tab_title(code):
+    f = FORMS[code]
+    if code == "DB":
+        return "Dự báo nhu cầu 2027 – 2031"
+    if code == "DM":
+        return "Danh mục sản phẩm dùng chung"
+    return f"Biểu {code if code != 'B2TH' else 'B2'} – {f.title}"
 
 
 class Page(QWidget):
@@ -155,9 +164,9 @@ class DashboardPage(Page):
         grid.setSpacing(10)
         self.cards = {
             "nv": Card("Nhiệm vụ (A1)"), "cv": Card("Công việc (A2)"),
-            "hours": Card("Giờ lao động/năm (B1 + B2)"), "vt": Card("Vị trí việc làm (C1)"),
-            "need": Card("Người cần bố trí (C3)", theme.OK), "existing": Card("Nhân lực hiện có (D1)"),
-            "diff": Card("Chênh lệch hiện có − nhu cầu"), "giao": Card("Số lượng người làm việc được giao"),
+            "hours": Card("Giờ ròng/năm (B1 đạt + tác động B2)"), "vt": Card("Vị trí việc làm (C1)"),
+            "qd": Card("Người quy đổi PP2 (C3) – tham khảo"), "need": Card("Người cần bố trí (C3)", theme.OK),
+            "existing": Card("Nhân lực hiện có (D1, người)"), "ok": Card("VTVL đủ căn cứ (C3 ĐẠT + đã kiểm chứng)"),
         }
         for i, c in enumerate(self.cards.values()):
             grid.addWidget(c, i // 4, i % 4)
@@ -180,7 +189,7 @@ class DashboardPage(Page):
             self.step_btns.append((st, b))
         sv.addStretch(1)
         mid.addWidget(steps_card, 2)
-        self.chart_group = BarChart("Nhu cầu và hiện có theo nhóm vị trí việc làm")
+        self.chart_group = BarChart("Nhu cầu và hiện có theo loại nhân lực")
         mid.addWidget(self.chart_group, 3)
         self.lay.addLayout(mid, 1)
         self.chart_plan = BarChart("Phương án số người làm việc giai đoạn 2027 - 2031 (Biểu D2)")
@@ -195,15 +204,15 @@ class DashboardPage(Page):
         self.sub_lbl.setText(meta.get("ky_ra_soat", "") + sample)
         self.cards["nv"].value.setText(fmt(s["nv"]))
         self.cards["cv"].value.setText(fmt(s["cv"]))
-        self.cards["hours"].value.setText(fmt(s["hours"] + s["delta"], 0))
+        self.cards["hours"].value.setText(fmt(s["net"], 0))
         self.cards["vt"].value.setText(fmt(s["vt"]))
+        self.cards["qd"].value.setText(fmt(s["qd"], 2))
         self.cards["need"].value.setText(fmt(s["need"], 2))
-        self.cards["existing"].value.setText(fmt(s["existing"], 2))
-        d = s["diff"]
-        self.cards["diff"].value.setText(("+" if d > 0 else "") + fmt(d, 2))
-        self.cards["diff"].value.setStyleSheet(
-            f"color:{theme.ERR if d <= -0.5 else (theme.WARN if d >= 0.5 else theme.OK)}")
-        self.cards["giao"].value.setText(fmt(s["giao"], 2))
+        self.cards["existing"].value.setText(fmt(s["existing"]))
+        ok_txt = f"{s['ok_vt']}/{s['vt']}"
+        self.cards["ok"].value.setText(ok_txt)
+        full = s["vt"] and s["ok_vt"] == s["vt"]
+        self.cards["ok"].value.setStyleSheet(f"color:{theme.OK if full else theme.WARN}")
         status = step_status(self.project)
         icon = {"done": "✅", "partial": "🟡", "empty": "⚪"}
         word = {"done": "hoàn thành", "partial": "đang thực hiện", "empty": "chưa bắt đầu"}
@@ -213,11 +222,11 @@ class DashboardPage(Page):
             b.setText(f"{icon[stt]}  Bước {st.no}. {st.title}{forms}  ({word[stt]})")
         groups = []
         for g, v in s["by_group"].items():
-            groups.append((g, [("Nhu cầu", v["need"], theme.PRIMARY), ("Hiện có", v["existing"], theme.ACCENT)]))
+            groups.append((g, [("Người cần bố trí (C3)", v["need"], theme.PRIMARY),
+                               ("Hiện có (D1)", v["existing"], theme.ACCENT)]))
         self.chart_group.set_data(groups)
-        plan = [("Hiện có", [("Hiện có", s["existing"], theme.ACCENT)])] if s["existing"] else []
-        plan += [(str(y), [("Phương án từng năm", s["plan"][y], theme.PRIMARY)]) for y in YEARS]
-        plan += [("Nhu cầu", [("Nhu cầu (C3)", s["need"], theme.OK)])]
+        plan = [(str(y), [("Số người cần bố trí", s["plan"][y], theme.PRIMARY),
+                          ("Số người có thể bố trí", s["avail"][y], theme.ACCENT)]) for y in YEARS]
         self.chart_plan.set_data(plan if any(v for _, b in plan for _, v, _ in b) else [])
 
 
@@ -244,7 +253,7 @@ class StepPage(Page):
             wrap = QWidget()
             wl = QVBoxLayout(wrap)
             wl.setContentsMargins(0, 0, 0, 0)
-            tl = QLabel(f"Biểu {code} – {FORMS[code].title}")
+            tl = QLabel(tab_title(code))
             tl.setStyleSheet(f"font-weight:700;font-size:11pt;color:{theme.PRIMARY_DARK}")
             wl.addWidget(tl)
             wl.addWidget(ed)
@@ -254,7 +263,7 @@ class StepPage(Page):
             for code in step.forms:
                 ed = FormEditor(project, code)
                 self.editors[code] = ed
-                self.tabs.addTab(ed, f"Biểu {code} – {FORMS[code].title}")
+                self.tabs.addTab(ed, tab_title(code))
             split.addWidget(self.tabs)
         split.setSizes([130, 640])
         split.setStretchFactor(1, 1)
@@ -313,7 +322,7 @@ class CheckPage(Page):
         self.filter.currentIndexChanged.connect(self._fill)
         bar.addWidget(QLabel("Hiển thị:"))
         bar.addWidget(self.filter)
-        bx = QPushButton("📊 Xuất Bộ 09 biểu (Excel)")
+        bx = QPushButton("📊 Xuất vào Bộ biểu Excel chính thức")
         bx.setObjectName("Primary")
         bx.clicked.connect(self.export_excel.emit)
         bw = QPushButton("📄 Xuất báo cáo thuyết minh (Word)")
@@ -375,12 +384,15 @@ class InfoPage(Page):
         ("ten_don_vi", "Tên đơn vị"),
         ("co_quan_chu_quan", "Cơ quan chủ quản"),
         ("dia_chi", "Địa chỉ"),
-        ("ky_ra_soat", "Kỳ rà soát"),
+        ("ky_ra_soat", "Đợt rà soát"),
+        ("ky_thong_ke", "Kỳ thống kê khối lượng (12 tháng)"),
+        ("ngay_chot", "Ngày chốt nhân lực hiện có"),
+        ("bc_giao", "Số lượng người làm việc được giao (tổng)"),
         ("nguoi_dung_dau", "Họ tên người đứng đầu"),
         ("chuc_vu_nguoi_dung_dau", "Chức vụ người đứng đầu"),
         ("nguoi_lap", "Họ tên người lập biểu"),
         ("dien_thoai", "Điện thoại liên hệ"),
-        ("quy_gio", "Quỹ giờ làm việc chuẩn (giờ/người/năm)"),
+        ("quy_gio", "Quỹ giờ quy đổi PP2 (giờ/người/năm)"),
     )
 
     def __init__(self, project):
@@ -408,13 +420,35 @@ class InfoPage(Page):
         self.kn.setFixedHeight(110)
         self.kn.textChanged.connect(lambda: self.project.set_meta("kien_nghi", self.kn.toPlainText(), notify=False))
         fl.addRow("Kiến nghị, đề xuất:", self.kn)
-        self.lay.addWidget(card)
-        note = QLabel("ⓘ  Dữ liệu được lưu tự động ngay khi nhập. Quỹ giờ 1.904 giờ là mức tham chiếu nghiệp vụ "
-                      "của Hướng dẫn 07-HD/BTCTW, không phải định mức áp dụng cơ học.")
+        tpl_row = QHBoxLayout()
+        self.tpl = QLineEdit()
+        self.tpl.setReadOnly(True)
+        b1 = QPushButton("Chọn tệp mẫu khác...")
+        b1.clicked.connect(self._pick_template)
+        b2 = QPushButton("Dùng mẫu kèm phần mềm")
+        b2.clicked.connect(lambda: (self.project.set_meta("template_path", ""), self.on_show()))
+        tpl_row.addWidget(self.tpl, 1)
+        tpl_row.addWidget(b1)
+        tpl_row.addWidget(b2)
+        fl.addRow("Mẫu Bộ biểu Excel:", tpl_row)
+        sc = QScrollArea()
+        sc.setWidgetResizable(True)
+        sc.setWidget(card)
+        self.lay.addWidget(sc, 1)
+        note = QLabel("ⓘ  Dữ liệu được lưu tự động ngay khi nhập. Quỹ giờ 1.904 giờ là mức tham chiếu nghiệp vụ PP2 "
+                      "(tham số DM_THAM_SO do cơ quan chủ trì quản lý), không phải định mức biên chế. Mẫu Bộ biểu mặc "
+                      "định là bản phát hành 19-10-2026; khi Ban Tổ chức Trung ương phát hành phiên bản mới, chọn tệp "
+                      "mẫu mới tại đây.")
         note.setObjectName("Note")
         note.setWordWrap(True)
         self.lay.addWidget(note)
-        self.lay.addStretch(1)
+
+    def _pick_template(self):
+        from PySide6.QtWidgets import QFileDialog
+        path, _ = QFileDialog.getOpenFileName(self, "Chọn tệp mẫu Bộ biểu Excel", "", "Excel (*.xlsx)")
+        if path:
+            self.project.set_meta("template_path", path)
+            self.on_show()
 
     def _save(self, key, value):
         if key == "quy_gio":
@@ -435,6 +469,8 @@ class InfoPage(Page):
         self.kn.blockSignals(True)
         self.kn.setPlainText(m.get("kien_nghi", ""))
         self.kn.blockSignals(False)
+        from ..core.exporter import template_path
+        self.tpl.setText(template_path(self.project))
 
 
 class LegalPage(Page):
@@ -454,32 +490,36 @@ class LegalPage(Page):
 
 HELP_HTML = """
 <h2 style='color:#083C6B'>Hướng dẫn sử dụng nhanh</h2>
+<p>Phần mềm bám sát <b>Hướng dẫn số 7-HD/BTCTW ngày 19/10/2026</b> và <b>Bộ biểu Excel 19-10-2026</b> của Ban Tổ
+chức Trung ương: cùng tên cột, cùng danh sách lựa chọn, cùng công thức và cảnh báo (mỗi cột có ký hiệu cột của bộ
+biểu, ví dụ “(R)”).</p>
 <ol style='line-height:150%'>
-<li><b>Thông tin đơn vị:</b> nhập tên đơn vị, người đứng đầu, người lập biểu, quỹ giờ chuẩn.</li>
-<li>Thực hiện lần lượt <b>Bước 1 → Bước 7</b> ở thanh bên trái. Mỗi bước có phần hướng dẫn nghiệp vụ
-ở trên và bảng nhập liệu (biểu) ở dưới.</li>
-<li>Thao tác bảng: <b>＋ Thêm dòng</b> (Ctrl+N); nhấp đúp vào ô hoặc gõ trực tiếp để sửa;
-<b>Enter</b> hoặc <b>✎ Chi tiết</b> để mở cửa sổ nhập đầy đủ; <b>Delete</b> để xóa.
-Ô nền <span style='background:#FDECEA'>đỏ nhạt</span> là bắt buộc; ô nền
-<span style='background:#EEF3FA'>xanh nhạt</span> do phần mềm tự tính.</li>
-<li>Các cột <i>Mã</i> (nhiệm vụ, công việc, vị trí) được chọn từ danh sách để bảo đảm liên kết giữa các biểu.
-Đổi mã ở biểu gốc thì các biểu liên quan tự cập nhật.</li>
-<li>Biểu C3: nhấp đúp cột <i>Công việc đảm nhận</i> để chọn công việc và tỷ lệ; phần mềm tự tính giờ và
-số người quy đổi = Tổng giờ ÷ Quỹ giờ (mặc định 1.904).</li>
-<li>Biểu C2, C3, D1, D2: dùng <b>⟳ Đồng bộ từ C1</b> để tạo sẵn dòng cho mọi vị trí.</li>
-<li><b>Bước 8:</b> kiểm tra tự động; nhấp đúp vào từng lỗi để đến đúng chỗ cần sửa; xuất
-<b>Bộ 09 biểu Excel</b> và <b>Báo cáo Word</b>.</li>
-<li>Dữ liệu tự động lưu vào tệp hồ sơ <code>.vtvl</code>. Dùng menu <b>Tệp → Sao lưu</b> để lưu bản sao,
-hoặc <b>Tệp → Mở</b> để mở hồ sơ khác (ví dụ hồ sơ từng năm).</li>
+<li><b>Thông tin đơn vị:</b> tên đơn vị, kỳ thống kê (01/10/2025 – 30/9/2026), ngày chốt nhân lực (30/9/2026),
+người đứng đầu, người lập biểu.</li>
+<li>Thực hiện lần lượt <b>Bước 1 → Bước 7</b>. Mỗi bước có hướng dẫn nghiệp vụ ở trên và các biểu ở dưới.</li>
+<li>Thao tác: <b>＋ Thêm dòng</b> (Ctrl+N); nhấp đúp hoặc gõ để sửa ô; <b>Enter</b> mở cửa sổ chi tiết;
+<b>Delete</b> xóa. Ô nền <span style='background:#FDECEA'>đỏ nhạt</span> là bắt buộc; ô nền
+<span style='background:#EEF3FA'>xanh nhạt</span> là cột công thức (ô xám, đã khóa trong bộ biểu).</li>
+<li>Cột cảnh báo: <span style='color:#1E8E3E'><b>ĐẠT</b></span> mới được chuyển sang bước sau (B1 → C3, C3 → dự báo → D2).
+Xử lý ở cột dữ liệu nguồn, không sửa nội dung cảnh báo.</li>
+<li>Mã liên kết: A2 gắn công việc với nhiệm vụ (A1) và VTVL (C1); B1, B2 tự lấy mã VTVL từ A2. Đổi mã ở biểu gốc
+thì biểu liên quan tự cập nhật.</li>
+<li>Các nút trợ giúp: <i>Đồng bộ từ C1</i> (C2, C3), <i>Điền theo kết quả tính</i> (C3),
+<i>Gợi ý nhân lực</i> (D1), <i>Tạo dự báo</i> và <i>Tạo phương án 2027–2031</i>.</li>
+<li><b>Bước 8:</b> kiểm tra tự động; nhấp đúp từng dòng để đến đúng chỗ cần sửa. Xuất <b>vào Bộ biểu Excel chính
+thức</b> (giữ nguyên công thức – phần mềm tự sửa các công thức lỗi của bản phát hành) và <b>báo cáo Word</b>.</li>
+<li><b>Tệp → Nhập từ Bộ biểu Excel</b>: kế thừa dữ liệu đã điền trong bộ biểu chính thức (kể cả do cơ quan đầu mối
+chuyển dữ liệu theo Công văn 1972, 2209, 2342-CV/BTCTW).</li>
+<li>Dữ liệu tự lưu vào tệp hồ sơ <code>.vtvl</code>; dùng <b>Tệp → Lưu thành (sao lưu)</b> để giữ phiên bản.</li>
 </ol>
-<h3 style='color:#083C6B'>Nguyên tắc cần lưu ý (Hướng dẫn 07-HD/BTCTW)</h3>
+<h3 style='color:#083C6B'>Nguyên tắc cần nhớ</h3>
 <ul style='line-height:150%'>
-<li>Không xác định vị trí việc làm xuất phát từ người hiện có, ngạch, mức lương hoặc số biên chế đã giao.</li>
-<li>Một vị trí việc làm không đồng nghĩa với một người hoặc một biên chế.</li>
-<li>Nhu cầu nhân lực tính được không tự động trở thành biên chế; không làm tròn cơ học.</li>
-<li>Kết quả rà soát không tự động làm thay đổi lương, phụ cấp khi chưa có quy định mới.</li>
-<li>Đơn vị sự nghiệp công lập phân biệt vị trí việc làm viên chức, số người làm việc và nguồn kinh phí;
-không gộp với biên chế công chức của cơ quan quản lý.</li>
+<li>VTVL xác định từ chức năng, nhiệm vụ; không xuất phát từ người hiện có, ngạch, mức lương hoặc số biên chế đã giao.</li>
+<li>Tính giờ lao động thực tế; không cộng tỷ lệ 10–15% hay hệ số cố định cho phần chưa đo; không lấy thời hạn xử lý làm giờ lao động.</li>
+<li>Người quy đổi PP2 giữ số thập phân, không tự làm tròn thành biên chế; không làm tròn tăng từng dòng rồi cộng.</li>
+<li>Dữ liệu chưa kiểm chứng chỉ để tính thử, không làm căn cứ đề xuất biên chế; kết quả không tự động làm tăng biên chế,
+không làm thay đổi lương, phụ cấp.</li>
+<li>Đơn vị sự nghiệp: phân biệt viên chức, hợp đồng lao động, nguồn ngân sách và nguồn thu.</li>
 </ul>
 """
 
