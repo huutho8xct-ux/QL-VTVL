@@ -28,7 +28,7 @@ def test_file_level_errors(env):
     xls.write_bytes(b"abc")
     assert analyze(str(xls), p).fatal
     fake = tmp / "b.xlsx"
-    fake.write_text("không phải excel")
+    fake.write_text("không phải excel", encoding="utf-8")
     rep = analyze(str(fake), p)
     assert rep.fatal and "không phải Excel" in rep.issues[0].message
     empty = tmp / "c.xlsx"
