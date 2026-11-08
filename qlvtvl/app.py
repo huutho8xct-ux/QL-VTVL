@@ -43,8 +43,8 @@ def selftest() -> int:
         pr.close()
         w = MainWindow()
         w.load(path)
-        for i in range(len(w.pages)):
-            w.go(i)
+        for key in list(w.pages):
+            w.go(key)
             app.processEvents()
         w.project.close()
         w.project = None

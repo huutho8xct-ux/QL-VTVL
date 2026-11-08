@@ -19,7 +19,7 @@ set ISCC="%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
 if exist %ISCC% (
   %ISCC% installer\qlvtvl.iss || goto :error
   echo.
-  echo HOAN TAT: dist\installer\CaiDat_QL-VTVL_1.2.0.exe
+  echo HOAN TAT: dist\installer\CaiDat_QL-VTVL_2.0.0.exe
 ) else (
   echo Khong tim thay Inno Setup 6 - chi tao ban chay truc tiep: dist\QL-VTVL\QL-VTVL.exe
 )

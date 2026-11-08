@@ -692,5 +692,6 @@ class FormEditor(QWidget):
         self.project._notify("D1")
 
     def import_excel(self):
-        from .import_dialog import run_import
-        run_import(self, self.project, [self.code])
+        win = self.window()
+        if hasattr(win, "open_import"):
+            win.open_import(self.code)

@@ -282,8 +282,10 @@ def export_word(project, path: str):
     para("VI. NỘI DUNG CHƯA ĐỦ CĂN CỨ, CẦN TIẾP TỤC XỬ LÝ", bold=True)
     pending = [i for i in issues if i.level in (ERROR, WARNING)]
     if pending:
-        table(("STT", "Biểu", "Mã", "Nội dung", "Đầu mối, thời hạn"),
-              [(n, i.form, i.ref, i.message, "") for n, i in enumerate(pending, 1)], 10)
+        gt = project.explanations() if hasattr(project, "explanations") else {}
+        table(("STT", "Biểu", "Mã", "Nội dung", "Giải trình / đầu mối, thời hạn"),
+              [(n, i.form, i.ref, i.message, s(gt.get(f"{i.form}|{i.ref}|{i.message}", {}).get("giai_trinh")))
+               for n, i in enumerate(pending, 1)], 10)
     else:
         para("Không còn lỗi hoặc cảnh báo theo kiểm tra tự động. Kết quả kiểm tra tự động không thay thế việc "
              "xác nhận nghiệp vụ của cơ quan, đơn vị.", align="justify", indent=True)

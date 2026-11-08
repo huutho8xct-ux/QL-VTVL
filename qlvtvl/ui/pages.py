@@ -200,7 +200,7 @@ class DashboardPage(Page):
         s = calc.summary()
         meta = self.project.meta()
         sample = " — đang dùng DỮ LIỆU MINH HỌA" if meta.get("du_lieu_mau") == "1" else ""
-        self.title_lbl.setText(f"Tổng quan – {meta.get('ten_don_vi', '')}")
+        self.title_lbl.setText(f"Trang làm việc – {meta.get('ten_don_vi', '')}")
         self.sub_lbl.setText(meta.get("ky_ra_soat", "") + sample)
         self.cards["nv"].value.setText(fmt(s["nv"]))
         self.cards["cv"].value.setText(fmt(s["cv"]))

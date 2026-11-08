@@ -1,121 +1,109 @@
-# QL-VTVL – Phần mềm rà soát vị trí việc làm
+# Hệ thống nhập liệu vị trí việc làm (QL-VTVL)
 ### Thư viện thành phố Cần Thơ
 
-Phần mềm cài trên Windows, hỗ trợ **rà soát, hoàn thiện vị trí việc làm, xác định nhu cầu nhân lực và xây dựng phương án biên chế giai đoạn 2027 – 2031**. Phần mềm làm theo **Hướng dẫn số 7-HD/BTCTW ngày 19/10/2026 của Ban Tổ chức Trung ương** (thực hiện Kết luận số 107-KL/TW ngày 17/10/2026 của Bộ Chính trị), kèm Bộ phụ lục I–VIII và **Bộ biểu Excel 19-10-2026**.
+Phần mềm cài trên Windows để **rà soát, hoàn thiện vị trí việc làm, xác định nhu cầu nhân lực và xây dựng phương án biên chế giai đoạn 2027 – 2031**. Phần mềm làm theo **Hướng dẫn số 7-HD/BTCTW ngày 19/10/2026 của Ban Tổ chức Trung ương** và **Bộ biểu Excel 19-10-2026** kèm theo.
 
-Phần mềm dùng **đúng tên cột, ký hiệu cột, danh sách lựa chọn, công thức và cảnh báo** của Bộ biểu chính thức. Kết quả tính đã được đối chiếu tự động với chính Bộ biểu trên 1.857 ô công thức: không có sai lệch. Khi xuất, dữ liệu được ghi **thẳng vào file Excel chính thức** để gửi theo đầu mối quy định.
+- Dùng đúng tên cột, ký hiệu cột, danh sách chọn, công thức và cảnh báo của Bộ biểu. Kết quả tính đã được đối chiếu với chính Bộ biểu: **0 sai lệch trên 1.857 ô công thức**.
+- Chạy độc lập trên máy, không cần mạng.
 
-![Tổng quan](docs/images/tong-quan.png)
+![Trang làm việc](docs/images/trang-lam-viec.png)
 
 ---
 
-## 1. Cài đặt trên Windows
+## 1. Cài đặt
+Yêu cầu Windows 10/11, 64-bit. Không cần quyền quản trị.
 
-**Yêu cầu:** Windows 10 hoặc 11, 64-bit. Không cần Python, không cần Internet, không cần quyền quản trị.
+1. Tải **`CaiDat_QL-VTVL_2.0.0.exe`** tại **Actions → Đóng gói bộ cài Windows →** lần chạy mới nhất **→ Artifacts `QL-VTVL-Windows`**, hoặc tại mục **Releases**.
+2. Chạy tệp cài đặt. Nếu SmartScreen cảnh báo, chọn *More info → Run anyway*.
 
-1. Tải **`CaiDat_QL-VTVL_1.2.0.exe`** tại mục **Actions → Đóng gói bộ cài Windows →** lần chạy mới nhất **→ Artifacts → `QL-VTVL-Windows`** (hoặc tại mục **Releases** nếu đã phát hành).
-2. Nhấp đúp tệp cài đặt và làm theo hướng dẫn. Nếu Windows SmartScreen cảnh báo, chọn **More info → Run anyway**: đây là phần mềm nội bộ, chưa ký số.
-3. Mở phần mềm từ biểu tượng **QL-VTVL**.
+Bản `QL-VTVL_portable.zip` không cần cài: giải nén rồi chạy `QL-VTVL.exe`.
 
-> Bản **`QL-VTVL_portable.zip`** không cần cài: giải nén rồi chạy `QL-VTVL.exe`.
+## 2. Bố cục và chức năng
 
-## 2. Quy trình 08 bước (Mục II Hướng dẫn 7-HD/BTCTW)
+**Thanh trên cùng**, từ trái sang phải:
+- nút thu gọn/mở rộng thanh bên;
+- tên hệ thống;
+- chip **đơn vị**, chip **kỳ thống kê** (01/10/2025 – 30/9/2026), chip **trạng thái hồ sơ** (Đang kê khai / Đã gửi · phiên bản);
+- **chuông** hiện số lỗi và cảnh báo (bấm để mở *Lỗi và giải trình*);
+- nút **sáng/tối**, nút **trợ giúp**;
+- người dùng và vai trò.
 
-| Bước | Nội dung | Biểu (trang tính trong Bộ biểu) |
+**Thanh bên** gồm ba nhóm:
+
+| Nhóm | Mục | Chức năng |
 |---|---|---|
-| 1 | Rà soát chức năng, nhiệm vụ và dữ liệu đã kê khai | **A1** – Nhiệm vụ (`1. A1_NhiemVu`) |
-| 2 | Xác định công việc, công đoạn và sản phẩm | **A2** – Công việc (`2. A2_CongViec`) |
-| 3 | Xác định số lượng sản phẩm và thời gian thực hiện | **B1** – Khối lượng (`3. B1_KhoiLuong`); Danh mục sản phẩm (`11. DM_SAN_PHAM`) |
-| 4 | Thay đổi do chuyển đổi số, tự chủ, thuê dịch vụ, xã hội hóa | **B2** chi tiết (`4. B2_CT_TacDong`) và tổng hợp tự động (`5. B2_ThayDoi`) |
-| 5 | Hoàn thiện danh mục VTVL, bản mô tả, khung năng lực | **C1** – VTVL, quỹ giờ PP2 (`6. C1_VTVL`); **C2** – Năng lực (`7. C2_NangLuc`) |
-| 6 | Xác định số người cần thiết theo từng VTVL | **C3** – Nhu cầu (`8. C3_NhuCau`) |
-| 7 | Đối chiếu nhân lực hiện có, xây dựng phương án | **D1** – Nhân lực (`9. D1_NhanLuc`); Dự báo (`DU_BAO_5_NAM`); **D2** – Phương án (`10. D2_PhuongAn`) |
-| 8 | Kiểm tra, xác nhận và gửi kết quả | Kiểm tra tự động (Phụ lục VI); xuất Bộ biểu Excel và báo cáo Word |
+| **KÊ KHAI** | Trang làm việc | Số liệu tổng hợp, tiến độ 08 bước, biểu đồ nhu cầu – hiện có – phương án |
+| | Hồ sơ của đơn vị | Thông tin đơn vị, người ký, kỳ, ngày chốt, mẫu Bộ biểu, quỹ giờ; căn cứ pháp lý |
+| | Hồ sơ | Hồ sơ đang mở, hồ sơ gần đây, tạo mới, mở, lưu bản sao, dữ liệu minh họa |
+| | Nhập 09 biểu | Nhập trực tiếp A1, A2, B1, B2 (chi tiết, tổng hợp), C1, C2, C3, D1, dự báo, D2, danh mục sản phẩm. Mỗi tab có nhãn **Đạt / n lỗi** và hướng dẫn nghiệp vụ của bước tương ứng |
+| | Lỗi và giải trình | Toàn bộ lỗi, cảnh báo; ghi **giải trình** ngay trong bảng; *Mở trong biểu* |
+| | Nhập từ Excel | Quy trình 4 bước có **kết chuyển** (mục 3) |
+| | Kiểm tra và gửi | Kiểm tra theo Phụ lục VI; xuất Bộ biểu Excel chính thức, báo cáo Word; **đóng gói và gửi hồ sơ** |
+| | Lịch sử hồ sơ | Nhật ký tạo, kết chuyển, xuất, gửi, khôi phục; **khôi phục** về một mốc bất kỳ |
+| **ĐƠN VỊ** | Hồ sơ cấp dưới | Tổng hợp nhiều hồ sơ (.vtvl hoặc Bộ biểu .xlsx) của đơn vị trực thuộc; xuất bảng tổng hợp |
+| **ỨNG DỤNG** | Đồng bộ dữ liệu | Xuất/nhập gói dữ liệu .vtvl giữa các máy; danh sách bản sao lưu, khôi phục |
+| | Cài đặt ứng dụng | Sáng/tối, màu nhấn (đỏ, xanh dương, xanh lục), cỡ chữ, người dùng, vai trò, tự sao lưu khi đóng |
 
-Kỳ thống kê là **01/10/2025 – 30/9/2026**. Nhân lực hiện có chốt ngày **30/9/2026**.
+![Nhập 09 biểu](docs/images/nhap-09-bieu.png)
 
-![Biểu B1](docs/images/bieu-b1.png)
+## 3. Nhập từ Excel: Chọn tệp → Kiểm tra tệp → Xem kết quả → Kết chuyển
+Phần mềm đọc tệp vào **vùng kiểm tra riêng** và báo kết quả đến từng ô. **Số liệu chính thức của hồ sơ chỉ thay đổi khi bấm *Kết chuyển*.**
 
-### Tính toán giống Bộ biểu
-- **B1:** Phút/SP dùng để tính ưu tiên phút chuẩn đã xác nhận trong danh mục, nếu không có thì lấy số đo thực tế. Giờ SP = Số SP × Phút/SP ÷ 60. Giờ tổng = Giờ SP + Giờ bổ sung. Cột **Cảnh báo dữ liệu** phải là **ĐẠT** thì dòng mới được chuyển sang C3.
-- **B2:** Giờ giảm = SP áp dụng × (Phút trước − Phút sau) ÷ 60. Kiểm tra trạng thái, đối chiếu trùng và các mức vượt B1. Giờ tác động ròng = Giờ việc mới − Giờ giảm hợp lệ.
-- **C1:** Quỹ giờ PP2 là mức chung 1.904 giờ. Chế độ đặc thù dùng giờ riêng nếu đã được kiểm chứng.
-- **C3:** Giờ ròng = Giờ B1 + Giờ tác động B2. **Người quy đổi PP2 = Giờ ròng ÷ Quỹ giờ.** Ví dụ trong Hướng dẫn: 2.600 ÷ 1.904 ≈ 1,366 người, **không tự làm tròn** thành biên chế. Ô cảnh báo theo đúng chuỗi kiểm tra của Bộ biểu.
-- **D1:** Giờ quy đổi của từng người, cảnh báo vượt quỹ giờ, trùng mã, thiếu nơi tính biên chế.
-- **Dự báo và D2:** Người cần bố trí từng năm = Người C3 (đã kiểm chứng) + Biến động. D2 có cảnh báo, kiểm soát đối chiếu và trạng thái thẩm định/quyết định.
+1. **Chọn tệp:** kéo thả hoặc chọn tệp .xlsx; phạm vi *cả bộ biểu* hoặc *một biểu*. Nút **Tải biểu mẫu chuẩn** lưu Bộ biểu đã sửa các công thức lỗi để phát cho người điền.
+2. **Kiểm tra tệp:** kiểm tra mẫu, sheet, tiêu đề cột và công thức.
+3. **Xem kết quả:**
+   - 3 thẻ số liệu: *Tổng số dòng kiểm tra*, *Số dòng có lỗi, cần sửa*, *Số dòng hợp lệ*;
+   - **chi tiết theo sheet**: tab có nhãn *Đạt / n lỗi / Xem lại*, bảng **Ô · Cột · Mức · Nội dung · Cách xử lý · Mở trong biểu**;
+   - **Tải về tệp kết quả có cột báo lỗi**: bản sao tệp có thêm cột *KẾT QUẢ KIỂM TRA* ở mỗi sheet, ô lỗi được tô màu và có ghi chú, để gửi lại người điền.
+4. **Kết chuyển:**
+   - chọn biểu cần kết chuyển; chọn *bổ sung/cập nhật theo mã* hoặc *thay thế*; tùy chọn *bỏ qua dòng lỗi*;
+   - phần mềm tự sao lưu trước, ghi vào hồ sơ, tính lại toàn bộ và ghi lịch sử. Có thể **hoàn tác**.
 
-![Biểu C3](docs/images/bieu-c3.png)
+**Những gì được kiểm tra:**
+- **Tệp:** sai định dạng, tệp hỏng hoặc có mật khẩu, không phải Bộ biểu.
+- **Sheet:** cột bị chèn/xóa/đổi tên thì không nhập sheet đó.
+- **Ô:** chữ trong cột số, số âm, ô lỗi Excel, năm ngoài 2027–2031, giá trị ngoài danh sách chọn, ô công thức bị nhập đè, thiếu mã.
+- **Liên kết:** trùng mã; **trùng với dòng đã có trong hồ sơ** (báo *Cần xem lại*; nếu giống hệt thì gộp thành một lưu ý); mã chưa có ở biểu gốc; vượt sức chứa.
+- **Tự chuẩn hóa:** chữ hoa/thường, Unicode tiếng Việt, ngày tháng, cách viết số kiểu Việt Nam.
 
-### Kiểm tra (Bước 8) và xuất hồ sơ
-- Liệt kê lỗi, cảnh báo và lưu ý từ các cột cảnh báo của Bộ biểu, cộng thêm kiểm tra liên kết giữa các biểu: mã chưa có, trùng mã, nhiệm vụ chưa phân rã, VTVL thiếu C2/C3, D2 chưa đủ 5 năm… Nhấp đúp vào từng dòng để đến đúng ô cần sửa.
-- **Xuất vào Bộ biểu Excel chính thức:** ghi các cột nhập liệu và giữ nguyên công thức, danh sách chọn, bảo vệ trang. Excel tự tính lại khi mở file.
-- **Báo cáo thuyết minh (Word):** gồm căn cứ, kết quả từng bước, bảng nhu cầu nhân lực, phương án 2027–2031 và **danh sách nội dung chưa đủ căn cứ** cần tiếp tục xử lý.
-- **Nhập từ Bộ biểu Excel:** kế thừa dữ liệu đã điền trong Bộ biểu chính thức, kể cả dữ liệu do cơ quan đầu mối chuyển theo Công văn 1972, 2209, 2342-CV/BTCTW. Mọi tệp được **kiểm soát lỗi trước khi nhập** (xem mục dưới).
+![Nhập từ Excel](docs/images/nhap-tu-excel.png)
 
-### Kiểm soát lỗi khi nhập (upload) tệp biểu mẫu
-Chọn **Tệp → Nhập từ Bộ biểu Excel** (Ctrl+I) hoặc nút **Nhập từ bộ biểu** ở từng biểu. Phần mềm kiểm tra tệp trước, hiển thị kết quả để xem, và **chỉ ghi dữ liệu khi người dùng xác nhận**.
+## 4. Kiểm tra và gửi hồ sơ
+- Kiểm tra theo cột cảnh báo của Bộ biểu và Phụ lục VI. Hồ sơ **đủ điều kiện gửi** khi không còn lỗi và mọi cảnh báo đã có giải trình.
+- **Đóng gói và gửi hồ sơ** tạo tệp `.zip` gồm:
+  - Bộ biểu Excel chính thức (giữ công thức, đã tự sửa lỗi công thức của bản phát hành);
+  - báo cáo thuyết minh Word, có bảng nội dung chưa đủ căn cứ kèm giải trình;
+  - danh sách giải trình;
+  - tệp hồ sơ `.vtvl`;
+  - tệp *ĐỌC TRƯỚC*.
 
-| Lớp kiểm tra | Nội dung |
-|---|---|
-| **Tệp** | Sai định dạng (.xls, .csv, tệp đổi đuôi), tệp hỏng hoặc có mật khẩu, tệp rỗng, tệp không phải Bộ biểu VTVL, thiếu trang tham số, quỹ giờ trong tệp khác hồ sơ |
-| **Cấu trúc trang** | Tiêu đề cột (dòng 2) khác bộ biểu do bị chèn/xóa/đổi tên cột: **chặn không nhập trang đó** |
-| **Ô dữ liệu** | Chữ trong cột số; số âm; ô lỗi Excel (#REF!, #N/A…); năm ngoài 2027–2031; giá trị ngoài danh sách chọn; ô công thức (ô xám) bị nhập đè; nội dung quá dài; dòng có dữ liệu nhưng thiếu mã |
-| **Liên kết** | Trùng mã (hoặc trùng cặp VTVL – năm) trong trang; mã tham chiếu chưa có ở biểu gốc (A1, A2, C1, danh mục sản phẩm); vượt sức chứa 200 dòng |
+  Phiên bản được đánh số, lưu bản sao và ghi vào Lịch sử hồ sơ. Gửi tệp .zip qua kênh quy định (thư điện tử công vụ, phần mềm quản lý văn bản…).
 
-- **Tự chuẩn hóa:** chữ hoa/thường hoặc khoảng trắng thừa trong ô chọn (ví dụ “tiếp tục THỰC hiện” thành “Tiếp tục thực hiện”), mã Unicode tiếng Việt (dạng tổ hợp và dựng sẵn), ô ngày tháng chuyển thành dd/mm/yyyy, số kiểu Việt Nam (1.904; 2,5).
-- **Xem trước:** bảng tổng hợp từng biểu (số dòng đọc được, dòng lỗi, cảnh báo) và danh sách chi tiết gồm **ô, cột, giá trị, hướng xử lý**. Có thể xuất danh sách lỗi ra Excel để gửi lại người điền.
-- **Tùy chọn:** chọn biểu cần nhập; *thay thế toàn bộ* hoặc *bổ sung/cập nhật theo mã*; *bỏ qua các dòng có lỗi*. Nếu không chọn bỏ qua mà vẫn còn lỗi, nút Nhập bị khóa.
-- **An toàn:** tự **sao lưu hồ sơ** trước mỗi lần nhập (giữ 20 bản gần nhất trong thư mục dữ liệu, mục `SaoLuu`). Lệnh **Tệp → Hoàn tác lần nhập gần nhất** khôi phục lại trạng thái trước khi nhập.
+![Kiểm tra và gửi](docs/images/kiem-tra-va-gui.png)
 
-![Kiểm tra trước khi nhập](docs/images/kiem-tra-nhap.png)
+## 5. Tính toán và lỗi của bản Bộ biểu phát hành
+- **B1:** Giờ SP = Số SP × Phút/SP ÷ 60 (ưu tiên phút chuẩn đã xác nhận). Chỉ dòng **ĐẠT** được chuyển sang C3.
+- **B2:** Giờ giảm = SP áp dụng × (Phút trước − Phút sau) ÷ 60. Giờ tác động ròng = Giờ việc mới − Giờ giảm hợp lệ.
+- **C1/C3:** Người quy đổi PP2 = Giờ ròng ÷ Quỹ giờ (1.904). Ví dụ trong Hướng dẫn: 2.600 ÷ 1.904 ≈ 1,366, không tự làm tròn.
+- **D1, dự báo, D2:** theo đúng chuỗi cảnh báo của Bộ biểu.
 
-![Kiểm tra](docs/images/kiem-tra.png)
+Khi xuất, phần mềm tự sửa các công thức lỗi của bản 19-10-2026:
+- `C3`!M4:M202, `D2`!J4:J202, `DU_BAO_5_NAM`!G, I: trỏ sang tệp ngoài, chuỗi thông báo bị đánh số theo dòng;
+- `C1`!E35:E202: gọi tên `QUY_GIO_PP34`… thay vì `QUY_GIO_PP2`.
 
-### Lỗi của bản Bộ biểu phát hành 19-10-2026 được phần mềm tự sửa khi xuất
-Bản Excel phát hành có một số công thức sai từ dòng 4 trở đi. Khi xuất, phần mềm dựng lại các công thức này theo đúng công thức dòng 3 (dòng chuẩn):
+## 6. Căn cứ
+Kết luận 107-KL/TW ngày 17/10/2026; Hướng dẫn 7-HD/BTCTW ngày 19/10/2026 (Phụ lục I–VIII, Bộ biểu, Cẩm nang); Hướng dẫn 06-HD/BTCTW; Nghị định 232/2026/NĐ-CP (viên chức); Nghị định 361/2025/NĐ-CP (công chức); Luật Viên chức 2025; Luật Thư viện 2019; Thông tư 07/2023/TT-BVHTTDL.
 
-| Vị trí | Lỗi | Hệ quả nếu dùng nguyên bản |
-|---|---|---|
-| `8. C3_NhuCau`!M4:M202 | Trỏ tới tệp ngoài `[1]`, `[2]`; logic lệch (PP2→PP3, PP3→PP4) | Cảnh báo C3 sai từ VTVL thứ 2 |
-| `10. D2_PhuongAn`!J4:J202 | Trỏ tới tệp ngoài `[399]`; chuỗi thông báo bị đánh số ("C4 CHƯA…") | Cảnh báo D2 sai |
-| `DU_BAO_5_NAM`!G4:G1002, I4:I1002 | Trỏ tới tệp ngoài; chuỗi thông báo bị đánh số | Dự báo năm không nhận C3 |
-| `6. C1_VTVL`!E35:E202 | Gọi tên `QUY_GIO_PP34`, `QUY_GIO_PP35`… thay vì `QUY_GIO_PP2` | Lỗi #NAME? từ VTVL thứ 33 |
-
-Ngoài ra, cột cảnh báo C3 của Bộ biểu chưa chấp nhận phương pháp `PP1+PP2+PP3`, dù danh sách chọn có. Phần mềm báo đúng như Bộ biểu. Nên phản ánh điểm này với đầu mối quản lý biểu.
-
-## 3. Mẹo sử dụng
-- **Ctrl+N** thêm dòng · **Enter** mở chi tiết · **Delete** xóa · nhấp đúp hoặc gõ để sửa ô.
-- Ô nền **đỏ nhạt** là bắt buộc. Ô nền **xanh nhạt** là cột công thức (ô xám, đã khóa trong Bộ biểu). Mỗi tiêu đề cột có ký hiệu cột của Bộ biểu.
-- Nút trợ giúp: **Đồng bộ từ C1** (C2, C3), **Điền theo kết quả tính** (C3), **Gợi ý nhân lực từ C1** (D1), **Tạo dự báo** và **Tạo phương án 2027–2031**.
-- Khi Ban Tổ chức Trung ương phát hành phiên bản Bộ biểu mới: **Thông tin đơn vị → Mẫu Bộ biểu Excel → Chọn tệp mẫu khác**.
-- *Tệp → Mở hồ sơ dữ liệu minh họa* mở bộ số liệu **minh họa** của Thư viện TP Cần Thơ để làm quen. **Đây không phải số liệu chính thức.**
-
-## 4. Căn cứ (sửa được trong phần mềm)
-- Kết luận số 107-KL/TW ngày 17/10/2026 của Bộ Chính trị.
-- Hướng dẫn số 7-HD/BTCTW ngày 19/10/2026 của Ban Tổ chức Trung ương, kèm Phụ lục I–VIII, Bộ biểu Excel 19-10-2026, Hướng dẫn điền biểu, Cẩm nang VTVL.
-- Nghị định số 232/2026/NĐ-CP ngày 26/6/2026 (viên chức); Nghị định số 361/2025/NĐ-CP ngày 31/12/2025 (công chức); Hướng dẫn số 06-HD/BTCTW ngày 11/10/2026.
-- Luật Viên chức số 129/2025/QH15; Luật Thư viện 2019; Thông tư 07/2023/TT-BVHTTDL (định mức dịch vụ thư viện).
-
-## 5. Dành cho cán bộ kỹ thuật
-
+## 7. Dành cho cán bộ kỹ thuật
 ```bash
 pip install -r requirements.txt
 python run.py                 # chạy từ mã nguồn
-python -m pytest tests        # kiểm thử
+python -m pytest tests        # 24 kiểm thử
 ```
-
-**Tự đóng gói trên Windows:** cài Python 3.11+ (64-bit) và Inno Setup 6, rồi chạy `build_windows.bat`.
-
-**Tự động trên GitHub:** workflow `.github/workflows/build-windows.yml` kiểm thử, đóng gói, chạy thử `.exe` và tạo bộ cài. Gắn tag `v1.2.0` để phát hành vào mục Releases.
+Tự đóng gói trên Windows: chạy `build_windows.bat` (cần Python 3.11+ và Inno Setup 6). Trên GitHub, workflow `build-windows.yml` tự kiểm thử, đóng gói và tạo bộ cài; gắn tag `v2.0.0` để phát hành.
 
 ```
-qlvtvl/core/forms.py     Đặc tả biểu theo Bộ biểu 19-10-2026 (cột, ký hiệu cột, danh sách chọn)
-qlvtvl/core/calc.py      Mô phỏng công thức Excel (B1, B2, C1, C3, D1, dự báo, D2)
-qlvtvl/core/checks.py    Kiểm tra (Bước 8, Phụ lục VI)
-qlvtvl/core/exporter.py  Xuất Bộ biểu Excel chính thức (tự sửa công thức lỗi), báo cáo Word
-qlvtvl/core/importer.py  Kiểm soát lỗi khi nhập tệp: kiểm tra 3 lớp, xem trước, sao lưu, hoàn tác
-qlvtvl/core/guide.py     Nội dung 08 bước, căn cứ pháp lý
-qlvtvl/core/seed.py      Dữ liệu minh họa
-qlvtvl/assets/           Bộ biểu Excel 19-10-2026, biểu tượng
-qlvtvl/ui/               Giao diện PySide6
+qlvtvl/core/   forms (đặc tả biểu) · calc (công thức) · checks (Phụ lục VI) · exporter (Bộ biểu, Word)
+               importer (kiểm tra, kết chuyển, tệp kết quả) · package (gửi, giải trình, cấp dưới) · db (hồ sơ, lịch sử)
+qlvtvl/ui/     main_window (khung) · import_page · pages2 (các mục chức năng) · pages · form_editor · widgets · theme
 ```

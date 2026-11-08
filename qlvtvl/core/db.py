@@ -175,14 +175,47 @@ class Project:
                     self.update_row(r["_id"], {col: new}, notify=False)
             self._notify(form)
 
+    # --------------------------------------------------------- nhật ký, giải trình
+    def log(self, event: str, detail: str = "", backup: str = ""):
+        """Ghi lịch sử hồ sơ (biểu nội bộ LOG)."""
+        self.add_row("LOG", {"time": datetime.now().strftime("%d/%m/%Y %H:%M:%S"), "event": event,
+                             "detail": detail, "backup": backup, "user": self.get_meta("nguoi_lap", ""),
+                             "version": self.get_meta("phien_ban", "0")}, notify=False)
+
+    def history(self):
+        return list(reversed(self.rows("LOG")))
+
+    def explanations(self) -> dict:
+        return {r.get("key"): r for r in self.rows("GT")}
+
+    def set_explanation(self, key: str, text: str):
+        cur = self.explanations().get(key)
+        data = {"key": key, "giai_trinh": text, "nguoi": self.get_meta("nguoi_lap", ""),
+                "ngay": datetime.now().strftime("%d/%m/%Y %H:%M")}
+        if cur:
+            self.update_row(cur["_id"], data, notify=False)
+        else:
+            self.add_row("GT", data, notify=False)
+
+    def snapshot(self, label: str) -> str:
+        """Lưu một phiên bản hồ sơ vào thư mục sao lưu và ghi lịch sử."""
+        d = os.path.join(app_data_dir(), "SaoLuu")
+        os.makedirs(d, exist_ok=True)
+        safe = "".join(ch for ch in label if ch.isalnum())[:20] or "PhienBan"
+        path = os.path.join(d, f"{safe}_{datetime.now():%Y%m%d_%H%M%S_%f}.vtvl")
+        self.backup(path)
+        return path
+
     # ----------------------------------------------------------------- backup
     def restore_from(self, src: str):
         """Khôi phục toàn bộ dữ liệu hồ sơ từ một bản sao lưu .vtvl."""
         self.conn.commit()
+        logs = self.rows("LOG")   # lịch sử hồ sơ được giữ nguyên qua các lần khôi phục
         b = sqlite3.connect(src)
         with self.conn:
             b.backup(self.conn)
         b.close()
+        self.replace_rows("LOG", logs)
         self._notify("*")
 
     def backup(self, dest: str):

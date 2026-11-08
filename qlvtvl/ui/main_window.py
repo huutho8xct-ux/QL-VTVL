@@ -1,4 +1,4 @@
-"""Cửa sổ chính."""
+"""Cửa sổ chính: thanh trên cùng + thanh bên chia nhóm Kê khai – Đơn vị – Ứng dụng."""
 from __future__ import annotations
 
 import os
@@ -6,28 +6,61 @@ import re
 import unicodedata
 from datetime import datetime
 
-from PySide6.QtCore import QSettings, QSize, QTimer
-from PySide6.QtGui import QAction, QIcon, QKeySequence
+from PySide6.QtCore import QSettings, QSize, Qt, QTimer
+from PySide6.QtGui import QFont, QIcon, QKeySequence, QPixmap, QShortcut
 from PySide6.QtWidgets import (
-    QDialog, QFileDialog, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QMainWindow, QMessageBox,
+    QApplication, QDialog, QFileDialog, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QMainWindow, QMessageBox,
     QPushButton, QStackedWidget, QVBoxLayout, QWidget,
 )
 
 from .. import __version__
-from ..core.checks import ERROR, run_checks, step_status
+from ..core.checks import ERROR, WARNING, run_checks
 from ..core.db import Project, app_data_dir
 from ..core.guide import STEPS
 from ..core.seed import ensure_defaults, load_sample
-from .pages import CheckPage, DashboardPage, HelpPage, InfoPage, LegalPage, StepPage
+from . import theme
+from .import_page import ImportPage
+from .pages import DashboardPage, HelpPage
+from .pages2 import (
+    FormsPage, HistoryPage, IssuesPage, ProfilesPage, SendPage, SettingsPage, SubunitsPage, SyncPage, UnitPage,
+)
+from .widgets import chip, icon_button
+
+APP_NAME = "Hệ thống nhập liệu vị trí việc làm"
+ORG = "Thư viện thành phố Cần Thơ"
+FILE_FILTER = "Hồ sơ vị trí việc làm (*.vtvl);;Tất cả tệp (*.*)"
+ASSETS = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets")
+
+NAV = (
+    ("KÊ KHAI", (
+        ("dashboard", "⌂", "Trang làm việc"),
+        ("unit", "🏛", "Hồ sơ của đơn vị"),
+        ("profiles", "🗀", "Hồ sơ"),
+        ("forms", "▦", "Nhập 09 biểu"),
+        ("issues", "⚠", "Lỗi và giải trình"),
+        ("import", "⭱", "Nhập từ Excel"),
+        ("send", "➤", "Kiểm tra và gửi"),
+        ("history", "⟲", "Lịch sử hồ sơ"),
+    )),
+    ("ĐƠN VỊ", (("sub", "👥", "Hồ sơ cấp dưới"),)),
+    ("ỨNG DỤNG", (
+        ("sync", "⟳", "Đồng bộ dữ liệu"),
+        ("settings", "⚙", "Cài đặt ứng dụng"),
+        ("help", "?", "Hướng dẫn sử dụng"),
+    )),
+)
+
 
 def unidecode_vn(text: str) -> str:
     text = text.replace("Đ", "D").replace("đ", "d")
     return "".join(c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn")
 
 
-APP_NAME = "Phần mềm rà soát vị trí việc làm"
-ORG = "Thư viện thành phố Cần Thơ"
-FILE_FILTER = "Hồ sơ vị trí việc làm (*.vtvl);;Tất cả tệp (*.*)"
+def initials(name: str) -> str:
+    parts = [p for p in re.split(r"\s+", name.strip()) if p]
+    if not parts:
+        return "TV"
+    return (parts[0][0] + (parts[-1][0] if len(parts) > 1 else "")).upper()
 
 
 class WelcomeDialog(QDialog):
@@ -35,23 +68,23 @@ class WelcomeDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Bắt đầu")
         self.choice = None
-        self.resize(560, 330)
+        self.resize(580, 360)
         v = QVBoxLayout(self)
         v.setContentsMargins(26, 22, 26, 22)
-        t = QLabel("Chào mừng đến với phần mềm rà soát vị trí việc làm")
+        t = QLabel("Hệ thống nhập liệu vị trí việc làm")
         t.setObjectName("PageTitle")
-        t.setWordWrap(True)
         v.addWidget(t)
-        s = QLabel("Thực hiện theo 08 bước và Bộ biểu Excel kèm Hướng dẫn số 7-HD/BTCTW ngày 19/10/2026 "
-                   "của Ban Tổ chức Trung ương. Chọn cách bắt đầu:")
+        s = QLabel("Rà soát vị trí việc làm, nhu cầu nhân lực và phương án biên chế 2027–2031 theo Hướng dẫn số "
+                   "7-HD/BTCTW ngày 19/10/2026 và Bộ biểu Excel kèm theo. Chọn cách bắt đầu:")
         s.setWordWrap(True)
         s.setObjectName("PageSub")
         v.addWidget(s)
-        v.addSpacing(10)
+        v.addSpacing(8)
         for key, title, desc, primary in (
-            ("blank", "Tạo hồ sơ mới (trống)", "Bắt đầu nhập số liệu thực tế của đơn vị.", True),
-            ("sample", "Mở hồ sơ có dữ liệu minh họa",
-             "Dữ liệu mẫu của Thư viện TP Cần Thơ để làm quen phần mềm (không phải số liệu chính thức).", False),
+            ("blank", "Tạo hồ sơ mới (trống)", "Bắt đầu kê khai số liệu thực tế của đơn vị.", True),
+            ("import", "Tạo hồ sơ mới từ Bộ biểu Excel đã điền", "Kế thừa dữ liệu đã kê khai; kiểm tra lỗi trước khi "
+                                                                 "kết chuyển.", False),
+            ("sample", "Mở hồ sơ có dữ liệu minh họa", "Số liệu mẫu của Thư viện TP Cần Thơ để làm quen.", False),
             ("open", "Mở hồ sơ đã có (.vtvl)", "Tiếp tục làm việc với hồ sơ đã lưu.", False),
         ):
             b = QPushButton(f"{title}\n{desc}")
@@ -72,161 +105,259 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.settings = QSettings("ThuVienCanTho", "QL-VTVL")
         self.project: Project | None = None
+        self.pages = {}
         self.setWindowTitle(APP_NAME)
-        self.resize(1400, 860)
-        self.setMinimumSize(1100, 680)
-        icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "app.ico")
-        if os.path.exists(icon_path):
-            self.setWindowIcon(QIcon(icon_path))
-        self._build_menu()
+        self.resize(1440, 900)
+        self.setMinimumSize(1150, 700)
+        ico = os.path.join(ASSETS, "app.ico")
+        if os.path.exists(ico):
+            self.setWindowIcon(QIcon(ico))
+        self.apply_settings(rebuild=False)
         self.status_lbl = QLabel()
         self.statusBar().addPermanentWidget(self.status_lbl)
+        for seq, slot in (("Ctrl+N", self.new_project), ("Ctrl+O", self.open_project),
+                          ("Ctrl+I", lambda: self.go("import")), ("Ctrl+E", self.export_excel),
+                          ("Ctrl+Shift+S", self.save_as), ("F1", lambda: self.go("help")),
+                          ("Ctrl+Q", self.close)):
+            QShortcut(QKeySequence(seq), self, slot)
+        self._bell_timer = QTimer(self)
+        self._bell_timer.setSingleShot(True)
+        self._bell_timer.timeout.connect(self.refresh_topbar)
 
-    # ------------------------------------------------------------------ menu
-    def _build_menu(self):
-        mb = self.menuBar()
-        m = mb.addMenu("&Tệp")
-        self._act(m, "Hồ sơ mới...", self.new_project, QKeySequence.New)
-        self._act(m, "Mở hồ sơ...", self.open_project, QKeySequence.Open)
-        self._act(m, "Lưu thành (sao lưu)...", self.save_as, QKeySequence("Ctrl+Shift+S"))
-        self._act(m, "Mở hồ sơ dữ liệu minh họa", self.open_sample)
-        m.addSeparator()
-        self._act(m, "Nhập từ Bộ biểu Excel (kiểm tra lỗi trước khi nhập)...", self.import_all, QKeySequence("Ctrl+I"))
-        self._act(m, "Hoàn tác lần nhập gần nhất", self.undo_import)
-        m.addSeparator()
-        self._act(m, "Thoát", self.close, QKeySequence("Ctrl+Q"))
-        x = mb.addMenu("&Xuất báo cáo")
-        self._act(x, "Xuất vào Bộ biểu Excel chính thức...", self.export_excel, QKeySequence("Ctrl+E"))
-        self._act(x, "Báo cáo thuyết minh (Word)...", self.export_word, QKeySequence("Ctrl+W"))
-        h = mb.addMenu("Trợ &giúp")
-        self._act(h, "Hướng dẫn sử dụng", lambda: self.go(len(self.pages) - 1), QKeySequence.HelpContents)
-        self._act(h, "Thư mục dữ liệu", lambda: self._open_folder(app_data_dir()))
-        self._act(h, "Giới thiệu", self.about)
+    # ------------------------------------------------------------ giao diện
+    def apply_settings(self, rebuild=True):
+        dark = self.settings.value("dark", "false") in ("true", True)
+        style = theme.apply_theme(dark, self.settings.value("accent", "Đỏ"))
+        app = QApplication.instance()
+        if app:
+            f = QFont("Segoe UI", int(self.settings.value("font", 10)))
+            app.setFont(f)
+            app.setStyleSheet(style.replace("font-size: 10pt;", f"font-size: {int(self.settings.value('font', 10))}pt;", 1))
+        if rebuild and self.project:
+            cur = self.current_key()
+            self.build_ui()
+            self.go(cur or "dashboard")
 
-    def _act(self, menu, text, slot, shortcut=None):
-        a = QAction(text, self)
-        if shortcut:
-            a.setShortcut(shortcut)
-        a.triggered.connect(slot)
-        menu.addAction(a)
-        return a
+    def toggle_dark(self):
+        self.settings.setValue("dark", "false" if theme.DARK else "true")
+        self.apply_settings()
 
-    # ------------------------------------------------------------- building
+    def _top_bar(self):
+        bar = QWidget()
+        bar.setObjectName("TopBar")
+        bar.setFixedHeight(64)
+        h = QHBoxLayout(bar)
+        h.setContentsMargins(12, 6, 16, 6)
+        h.setSpacing(10)
+        h.addWidget(icon_button("☰", "Thu gọn / mở rộng thanh bên", self.toggle_sidebar))
+        logo = QLabel()
+        pm = QPixmap(os.path.join(ASSETS, "app.png"))
+        if not pm.isNull():
+            logo.setPixmap(pm.scaled(36, 36, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        h.addWidget(logo)
+        tv = QVBoxLayout()
+        tv.setSpacing(0)
+        t = QLabel("HỆ THỐNG NHẬP LIỆU VỊ TRÍ VIỆC LÀM")
+        t.setObjectName("AppTitle")
+        sub = QLabel(f"{self.project.meta().get('ten_don_vi', ORG)} · Hướng dẫn 7-HD/BTCTW")
+        sub.setObjectName("AppSub")
+        tv.addWidget(t)
+        tv.addWidget(sub)
+        h.addLayout(tv)
+        h.addSpacing(18)
+        m = self.project.meta()
+        self.chip_unit = chip(m.get("ten_don_vi", ORG), lambda: self.go("unit"), "Đơn vị kê khai")
+        self.chip_ky = chip(f"Kỳ {m.get('ky_thong_ke', '')}", lambda: self.go("unit"), "Kỳ thống kê khối lượng")
+        self.chip_status = chip("", lambda: self.go("send"), "Trạng thái hồ sơ")
+        for c in (self.chip_unit, self.chip_ky, self.chip_status):
+            h.addWidget(c)
+        h.addStretch(1)
+        bell_box = QWidget()
+        bl = QHBoxLayout(bell_box)
+        bl.setContentsMargins(0, 0, 0, 0)
+        bl.setSpacing(0)
+        self.bell = icon_button("🔔", "Lỗi và cảnh báo của hồ sơ", lambda: self.go("issues"))
+        self.bell_badge = QLabel("0")
+        self.bell_badge.setObjectName("Badge")
+        bl.addWidget(self.bell)
+        bl.addWidget(self.bell_badge, 0, Qt.AlignTop)
+        h.addWidget(bell_box)
+        h.addWidget(icon_button("☾" if not theme.DARK else "☀", "Chuyển giao diện sáng/tối", self.toggle_dark))
+        h.addWidget(icon_button("?", "Hướng dẫn sử dụng (F1)", lambda: self.go("help")))
+        h.addSpacing(6)
+        self.avatar = QLabel()
+        self.avatar.setObjectName("Avatar")
+        self.avatar.setAlignment(Qt.AlignCenter)
+        h.addWidget(self.avatar)
+        uv = QVBoxLayout()
+        uv.setSpacing(0)
+        self.user_lbl = QLabel()
+        self.user_lbl.setStyleSheet("font-weight:600;")
+        self.role_lbl = QLabel()
+        self.role_lbl.setObjectName("AppSub")
+        uv.addWidget(self.user_lbl)
+        uv.addWidget(self.role_lbl)
+        h.addLayout(uv)
+        return bar
+
+    def _sidebar(self):
+        side = QWidget()
+        side.setObjectName("Sidebar")
+        side.setFixedWidth(270)
+        v = QVBoxLayout(side)
+        v.setContentsMargins(4, 12, 4, 10)
+        self.nav = QListWidget()
+        self.nav.setObjectName("Nav")
+        self.nav_keys = []
+        for section, items in NAV:
+            head = QListWidgetItem(section)
+            head.setFlags(Qt.NoItemFlags)
+            f = head.font()
+            f.setPointSizeF(8.5)
+            f.setLetterSpacing(QFont.PercentageSpacing, 110)
+            head.setFont(f)
+            head.setForeground(Qt.gray)
+            head.setSizeHint(QSize(200, 34))
+            self.nav.addItem(head)
+            self.nav_keys.append(None)
+            for key, icon, label in items:
+                it = QListWidgetItem(f"{icon}   {label}")
+                it.setData(Qt.UserRole, label)
+                self.nav.addItem(it)
+                self.nav_keys.append(key)
+        self.nav.currentRowChanged.connect(self._on_nav)
+        v.addWidget(self.nav, 1)
+        foot = QLabel(f"Phiên bản {__version__}\nDữ liệu lưu trên máy, không cần mạng")
+        foot.setObjectName("AppSub")
+        foot.setContentsMargins(12, 0, 0, 0)
+        v.addWidget(foot)
+        self.sidebar = side
+        return side
+
+    def toggle_sidebar(self):
+        collapsed = self.sidebar.width() > 100
+        self.sidebar.setFixedWidth(64 if collapsed else 270)
+        for i, key in enumerate(self.nav_keys):
+            it = self.nav.item(i)
+            if key is None:
+                it.setHidden(collapsed)
+            else:
+                label = it.data(Qt.UserRole)
+                icon = it.text().split("   ")[0]
+                it.setText(icon if collapsed else f"{icon}   {label}")
+                it.setToolTip(label)
+
     def build_ui(self):
         self.project._listeners.clear()
         old = self.centralWidget()
         root = QWidget()
-        h = QHBoxLayout(root)
-        h.setContentsMargins(0, 0, 0, 0)
-        h.setSpacing(0)
-
-        side = QWidget()
-        side.setObjectName("Sidebar")
-        side.setFixedWidth(300)
-        sv = QVBoxLayout(side)
-        sv.setContentsMargins(10, 16, 10, 10)
-        brand = QLabel("📚  QL-VTVL")
-        brand.setObjectName("Brand")
-        sub = QLabel(f"Rà soát vị trí việc làm\n{self.project.meta().get('ten_don_vi', ORG)}")
-        sub.setObjectName("BrandSub")
-        sub.setWordWrap(True)
-        sv.addWidget(brand)
-        sv.addWidget(sub)
-        sv.addSpacing(10)
-        self.nav = QListWidget()
-        self.nav.setObjectName("Nav")
-        self.nav.setIconSize(QSize(18, 18))
-        sv.addWidget(self.nav, 1)
-        foot = QLabel(f"Theo Hướng dẫn 07-HD/BTCTW\nPhiên bản {__version__}")
-        foot.setObjectName("BrandSub")
-        sv.addWidget(foot)
-        h.addWidget(side)
-
+        rv = QVBoxLayout(root)
+        rv.setContentsMargins(0, 0, 0, 0)
+        rv.setSpacing(0)
+        rv.addWidget(self._top_bar())
+        body = QHBoxLayout()
+        body.setSpacing(0)
+        body.addWidget(self._sidebar())
         self.stack = QStackedWidget()
-        h.addWidget(self.stack, 1)
-        self.pages = []
+        body.addWidget(self.stack, 1)
+        rv.addLayout(body, 1)
         p = self.project
-        self.dashboard = DashboardPage(p)
-        self.dashboard.go_step.connect(lambda n: self.go(self.step_index[n]))
-        self._add("🏠  Tổng quan", self.dashboard)
-        self._add("🏛  Thông tin đơn vị", InfoPage(p))
-        self.step_index = {}
-        self.step_pages = {}
-        self.form_step = {}
-        for st in STEPS:
-            if st.forms:
-                page = StepPage(p, st)
-                page.next_btn.clicked.connect(lambda _=False, n=st.no: self.go(self.step_index[n + 1]))
-                page.prev_btn.clicked.connect(lambda _=False, n=st.no: self.go(self.step_index[n - 1]))
-                for ed in page.editors.values():
-                    ed.changed.connect(self._update_status)
-                for f in st.forms:
-                    self.form_step[f] = st.no
-            else:
-                page = CheckPage(p, st)
-                page.goto.connect(self.goto_issue)
-                page.export_excel.connect(self.export_excel)
-                page.export_word.connect(self.export_word)
-            self.step_index[st.no] = len(self.pages)
-            self.step_pages[st.no] = page
-            self._add(f"Bước {st.no}. {st.short}", page)
-        self._add("⚖  Căn cứ pháp lý", LegalPage(p))
-        self._add("❔  Hướng dẫn sử dụng", HelpPage())
-        self.nav.currentRowChanged.connect(self._on_nav)
+        send_step = next(st for st in STEPS if not st.forms)
+        self.pages = {
+            "dashboard": DashboardPage(p), "unit": UnitPage(p), "profiles": ProfilesPage(p), "forms": FormsPage(p),
+            "issues": IssuesPage(p), "import": ImportPage(p), "send": SendPage(p, send_step),
+            "history": HistoryPage(p), "sub": SubunitsPage(p), "sync": SyncPage(p), "settings": SettingsPage(p),
+            "help": HelpPage(),
+        }
+        for w in self.pages.values():
+            self.stack.addWidget(w)
+        pg = self.pages
+        pg["dashboard"].go_step.connect(self.go_step)
+        pg["issues"].open_form.connect(self.goto_issue)
+        pg["send"].goto.connect(self.goto_issue)
+        pg["send"].export_excel.connect(self.export_excel)
+        pg["send"].export_word.connect(self.export_word)
+        pg["send"].sent.connect(self.refresh_topbar)
+        pg["import"].open_form.connect(lambda c, k: self.open_form(c, key=k))
+        pg["import"].imported.connect(self._after_data_change)
+        pg["history"].restored.connect(self._after_restore)
+        pg["sync"].restored.connect(self._after_restore)
+        pg["profiles"].request_new.connect(self.new_project)
+        pg["profiles"].request_open.connect(self.load)
+        pg["profiles"].request_sample.connect(self.open_sample)
+        pg["profiles"].request_save_as.connect(self.save_as)
+        pg["settings"].changed.connect(self.apply_settings)
+        p.subscribe(lambda form: self._bell_timer.start(500))
         self.setCentralWidget(root)
         if old:
             old.deleteLater()
-        self.nav.setCurrentRow(0)
-        self._refresh_nav()
-        self._update_status()
+        self.go("dashboard")
+        self.refresh_topbar()
 
-    def _add(self, label, page):
-        self.pages.append(page)
-        self.stack.addWidget(page)
-        it = QListWidgetItem(label)
-        self.nav.addItem(it)
+    # ------------------------------------------------------------- điều hướng
+    def current_key(self):
+        row = self.nav.currentRow() if hasattr(self, "nav") else -1
+        return self.nav_keys[row] if 0 <= row < len(getattr(self, "nav_keys", [])) else None
 
-    def _on_nav(self, i):
-        if i < 0:
+    def go(self, key):
+        if key in self.nav_keys:
+            self.nav.setCurrentRow(self.nav_keys.index(key))
+
+    def _on_nav(self, row):
+        key = self.nav_keys[row] if 0 <= row < len(self.nav_keys) else None
+        if not key:
             return
-        self.stack.setCurrentIndex(i)
-        self.pages[i].on_show()
-        self._refresh_nav()
+        page = self.pages[key]
+        self.stack.setCurrentWidget(page)
+        if hasattr(page, "on_show"):
+            page.on_show()
 
-    def go(self, i):
-        self.nav.setCurrentRow(i)
+    def go_step(self, n):
+        st = next((x for x in STEPS if x.no == n), None)
+        if st and st.forms:
+            self.open_form(st.forms[0])
+        else:
+            self.go("send")
 
-    def _refresh_nav(self):
-        status = step_status(self.project)
-        icon = {"done": "✅", "partial": "🟡", "empty": "⚪"}
-        for st in STEPS:
-            it = self.nav.item(self.step_index[st.no])
-            it.setText(f"{icon[status[st.no]]}  Bước {st.no}. {st.short}")
-            it.setToolTip(st.title)
+    def open_form(self, code, row_id=None, key=None):
+        self.go("forms")
+        self.pages["forms"].open(code, row_id=row_id, key=key)
 
     def goto_issue(self, form, row_id, ref):
         if form == "TT":
-            self.go(1)
+            self.go("unit")
             return
-        n = self.form_step.get(form)
-        if not n:
-            return
-        self.go(self.step_index[n])
-        page = self.step_pages[n]
-        page.show_form(form, row_id=row_id, key=None if row_id else ref)
-        if not row_id and ref and form == "C3":
-            # lỗi phân công công việc: mở C3 ở đầu biểu
-            pass
+        self.open_form(form, row_id=row_id, key=None if row_id else ref)
 
-    def _update_status(self):
-        if not self.project:
+    def refresh_topbar(self):
+        if not self.project or not hasattr(self, "bell_badge"):
             return
-        t = datetime.now().strftime("%H:%M:%S")
-        self.status_lbl.setText(f"💾 Đã lưu tự động lúc {t}   |   Hồ sơ: {self.project.path}")
-        if hasattr(self, "nav"):
-            QTimer.singleShot(0, self._refresh_nav)
+        m = self.project.meta()
+        issues = run_checks(self.project)
+        n = sum(1 for i in issues if i.level in (ERROR, WARNING))
+        self.bell_badge.setText(str(n) if n < 100 else "99+")
+        self.bell_badge.setVisible(n > 0)
+        self.chip_unit.setText(m.get("ten_don_vi", ORG)[:34])
+        self.chip_ky.setText(f"Kỳ {m.get('ky_thong_ke', '')}")
+        ver = m.get("phien_ban") or "0"
+        status = m.get("trang_thai_ho_so") or "Đang kê khai"
+        self.chip_status.setText(f"{'✔ ' if status == 'Đã gửi' else '✎ '}{status}" + (f" · v{ver}" if ver != "0" else ""))
+        name = m.get("nguoi_lap", "") or "Chưa đặt tên người dùng"
+        self.avatar.setText(initials(m.get("nguoi_lap", "") or m.get("ten_don_vi", "TV")))
+        self.user_lbl.setText(name)
+        self.role_lbl.setText(self.settings.value("role", "Cán bộ kê khai"))
+        self.status_lbl.setText(f"💾 Tự lưu {datetime.now():%H:%M:%S}   |   Hồ sơ: {self.project.path}")
 
-    # --------------------------------------------------------------- project
+    def _after_data_change(self):
+        self.refresh_topbar()
+
+    def _after_restore(self):
+        cur = self.current_key()
+        self.build_ui()
+        self.go(cur or "dashboard")
+        QMessageBox.information(self, "Khôi phục", "Đã khôi phục dữ liệu hồ sơ.")
+
+    # --------------------------------------------------------------- hồ sơ
     def start(self):
         last = self.settings.value("last_project", "")
         if last and os.path.exists(last):
@@ -237,6 +368,11 @@ class MainWindow(QMainWindow):
             return False
         if dlg.choice == "blank":
             return self.new_project(first=True)
+        if dlg.choice == "import":
+            ok = self.new_project(first=True)
+            if ok:
+                self.go("import")
+            return ok
         if dlg.choice == "sample":
             return self.open_sample()
         return self.open_project() or self.new_project(first=True)
@@ -247,6 +383,8 @@ class MainWindow(QMainWindow):
         self.project = Project(path)
         ensure_defaults(self.project)
         self.settings.setValue("last_project", path)
+        recent = [p for p in (self.settings.value("recent", []) or []) if p != path]
+        self.settings.setValue("recent", ([path] + recent)[:10])
         self.setWindowTitle(f"{APP_NAME} – {os.path.basename(path)}")
         self.build_ui()
 
@@ -270,8 +408,12 @@ class MainWindow(QMainWindow):
         if os.path.exists(path):
             if QMessageBox.question(self, "Tệp đã tồn tại", "Ghi đè tệp đã có?") != QMessageBox.Yes:
                 return False
+            if self.project and os.path.abspath(self.project.path) == os.path.abspath(path):
+                self.project.close()
+                self.project = None
             os.remove(path)
         self.load(path)
+        self.project.log("Tạo hồ sơ mới", os.path.basename(path))
         return True
 
     def open_project(self):
@@ -284,20 +426,20 @@ class MainWindow(QMainWindow):
 
     def open_sample(self):
         path = os.path.join(app_data_dir(), "DuLieuMinhHoa_ThuVienCanTho.vtvl")
+        if self.project and os.path.abspath(self.project.path) == os.path.abspath(path):
+            self.project.close()
+            self.project = None
         if os.path.exists(path):
-            if self.project and os.path.abspath(self.project.path) == os.path.abspath(path):
-                self.project.close()
-                self.project = None
             os.remove(path)
         pr = Project(path)
         ensure_defaults(pr)
         load_sample(pr)
+        pr.log("Tạo hồ sơ dữ liệu minh họa", "Số liệu mẫu, không phải số liệu chính thức")
         pr.close()
         self.load(path)
         QMessageBox.information(self, "Dữ liệu minh họa",
-                                "Đã mở hồ sơ dữ liệu MINH HỌA của Thư viện thành phố Cần Thơ.\n\n"
-                                "Số liệu chỉ để làm quen phần mềm. Khi rà soát chính thức, hãy tạo hồ sơ mới "
-                                "(Tệp → Hồ sơ mới) hoặc sửa trực tiếp bằng số liệu đã được xác nhận.")
+                                "Đã mở hồ sơ dữ liệu MINH HỌA của Thư viện thành phố Cần Thơ.\n\nSố liệu chỉ để làm quen. "
+                                "Khi rà soát chính thức, hãy tạo hồ sơ mới (mục Hồ sơ).")
         return True
 
     def save_as(self):
@@ -305,29 +447,20 @@ class MainWindow(QMainWindow):
         if not path:
             return
         self.project.backup(path)
+        self.project.log("Lưu bản sao hồ sơ", path)
         if QMessageBox.question(self, "Đã lưu", f"Đã lưu bản sao:\n{path}\n\nChuyển sang làm việc với bản sao này?"
                                 ) == QMessageBox.Yes:
             self.load(path)
 
-    # ---------------------------------------------------------------- export
+    # ---------------------------------------------------------------- xuất
     def _export_path(self, title, name, flt):
-        meta_dir = self.settings.value("export_dir", os.path.expanduser("~/Documents"))
-        path, _ = QFileDialog.getSaveFileName(self, title, os.path.join(meta_dir, name), flt)
+        d = self.settings.value("export_dir", os.path.expanduser("~/Documents"))
+        path, _ = QFileDialog.getSaveFileName(self, title, os.path.join(d, name), flt)
         if path:
             self.settings.setValue("export_dir", os.path.dirname(path))
         return path
 
-    def _confirm_errors(self):
-        errs = [i for i in run_checks(self.project) if i.level == ERROR]
-        if not errs:
-            return True
-        return QMessageBox.question(
-            self, "Còn lỗi dữ liệu",
-            f"Dữ liệu còn {len(errs)} lỗi (xem Bước 8). Vẫn xuất báo cáo để xem trước?") == QMessageBox.Yes
-
     def export_excel(self):
-        if not self._confirm_errors():
-            return
         unit = re.sub(r"[^A-Za-z0-9]+", "", unidecode_vn(self.project.meta().get("ten_don_vi", ""))) or "DonVi"
         path = self._export_path("Xuất vào Bộ biểu Excel chính thức",
                                  f"BoBieu_VTVL_{unit}_{datetime.now():%Y%m%d}.xlsx", "Excel (*.xlsx)")
@@ -344,18 +477,15 @@ class MainWindow(QMainWindow):
         except Exception as e:  # noqa: BLE001
             QMessageBox.critical(self, "Lỗi", f"Không xuất được bộ biểu: {e}")
             return
+        self.project.log("Xuất Bộ biểu Excel", os.path.basename(path))
         extra = ""
         if info.get("fixed"):
-            extra += (f"\n\nĐã tự sửa {info['fixed']} ô công thức lỗi của bản phát hành (tham chiếu tệp ngoài, "
-                      "chuỗi thông báo bị đánh số, tên QUY_GIO_PP2 bị lệch).")
+            extra += f"\n\nĐã tự sửa {info['fixed']} ô công thức lỗi của bản phát hành."
         if info.get("overflow"):
-            extra += "\n\nVượt sức chứa bộ biểu: " + ", ".join(f"{k}: {v} dòng" for k, v in info["overflow"].items()) + \
-                     " (đã ghi giá trị tính sẵn; báo đầu mối hỗ trợ kỹ thuật)."
+            extra += "\n\nVượt sức chứa bộ biểu: " + ", ".join(f"{k}: {v} dòng" for k, v in info["overflow"].items())
         self._done(path, extra)
 
     def export_word(self):
-        if not self._confirm_errors():
-            return
         path = self._export_path("Xuất báo cáo thuyết minh", f"BaoCao_RaSoat_VTVL_{datetime.now():%Y%m%d}.docx",
                                  "Word (*.docx)")
         if not path:
@@ -368,6 +498,7 @@ class MainWindow(QMainWindow):
         except PermissionError:
             QMessageBox.critical(self, "Lỗi", "Không ghi được tệp. Hãy đóng tệp nếu đang mở trong Word.")
             return
+        self.project.log("Xuất báo cáo Word", os.path.basename(path))
         self._done(path)
 
     def _done(self, path, extra=""):
@@ -378,47 +509,29 @@ class MainWindow(QMainWindow):
         box.addButton("Đóng", QMessageBox.RejectRole)
         box.exec()
         if box.clickedButton() is open_btn:
-            self._open_folder(path)
+            from PySide6.QtCore import QUrl
+            from PySide6.QtGui import QDesktopServices
+            QDesktopServices.openUrl(QUrl.fromLocalFile(path))
 
     def import_all(self):
-        from .import_dialog import run_import
-        if run_import(self, self.project):
-            self.build_ui()
+        self.go("import")
 
-    def undo_import(self):
-        from ..core.importer import undo_last_import
-        last = self.project.get_meta("last_import", "")
-        bk = self.project.get_meta("last_import_backup", "")
-        if not bk or not os.path.exists(bk):
-            QMessageBox.information(self, "Hoàn tác", "Không có lần nhập nào để hoàn tác.")
-            return
-        if QMessageBox.question(self, "Hoàn tác lần nhập",
-                                f"Khôi phục hồ sơ về trạng thái trước lần nhập: {last}?\n"
-                                "Mọi thay đổi sau lần nhập đó sẽ bị mất.") != QMessageBox.Yes:
-            return
-        undo_last_import(self.project)
-        self.build_ui()
-        QMessageBox.information(self, "Hoàn tác", "Đã khôi phục hồ sơ về trạng thái trước khi nhập.")
-
-    @staticmethod
-    def _open_folder(path):
-        from PySide6.QtCore import QUrl
-        from PySide6.QtGui import QDesktopServices
-        QDesktopServices.openUrl(QUrl.fromLocalFile(path))
-
-    def about(self):
-        QMessageBox.about(
-            self, "Giới thiệu",
-            f"<h3>{APP_NAME}</h3><p>Phiên bản {__version__}</p>"
-            f"<p>Đơn vị sử dụng: <b>{ORG}</b></p>"
-            "<p>Hỗ trợ rà soát, hoàn thiện vị trí việc làm, xác định nhu cầu nhân lực và xây dựng phương án "
-            "số lượng người làm việc giai đoạn 2027 - 2031 theo <b>Hướng dẫn số 07-HD/BTCTW ngày 19/10/2026</b> "
-            "của Ban Tổ chức Trung ương (08 bước, Bộ biểu Excel 19-10-2026: A1, A2, B1, B2, C1, C2, C3, D1, D2), "
-            "Kết luận 107-KL/TW, Nghị định 232/2026/NĐ-CP, Luật Viên chức 2025, "
-            "Nghị định 106/2020/NĐ-CP và Thông tư 10/2023/TT-BVHTTDL.</p>"
-            "<p>Dữ liệu lưu cục bộ trên máy tính, không gửi ra ngoài.</p>")
+    def open_import(self, code=None):
+        self.go("import")
+        self.pages["import"].reset()
+        self.pages["import"].set_scope(code)
 
     def closeEvent(self, e):
         if self.project:
+            if self.settings.value("autobackup", "true") in ("true", True):
+                try:
+                    self.project.snapshot("KhiDong")
+                    d = os.path.join(app_data_dir(), "SaoLuu")
+                    keep = int(self.settings.value("keep", 20))
+                    files = sorted(f for f in os.listdir(d) if f.startswith("KhiDong_"))
+                    for f in files[:-keep]:
+                        os.remove(os.path.join(d, f))
+                except OSError:
+                    pass
             self.project.close()
         super().closeEvent(e)
