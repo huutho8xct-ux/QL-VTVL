@@ -7,7 +7,6 @@ import sys
 from datetime import date
 
 from openpyxl import load_workbook
-from openpyxl.utils import column_index_from_string
 
 from .calc import Calculator, fmt, isnum, num, s
 from .checks import ERROR, WARNING, run_checks
@@ -157,45 +156,15 @@ export_excel = export_official
 
 
 # ----------------------------------------------------------------- nhập
-def import_official(project, path: str, codes=None) -> dict:
-    """Nhập các cột nhập liệu từ Bộ biểu Excel chính thức (đã điền) vào hồ sơ."""
-    wb = load_workbook(path, data_only=True)
-    result = {}
-    for code in codes or INPUT_FORMS:
-        form = FORMS[code]
-        if form.sheet not in wb.sheetnames:
-            continue
-        ws = wb[form.sheet]
-        cols = [c for c in form.columns if c.letter and c.kind != "calc"]
-        key = form.columns[0]
-        rows, empty_run = [], 0
-        last = FIRST_ROW + max(form.capacity, ws.max_row)
-        for rr in range(FIRST_ROW, min(ws.max_row, last) + 1):
-            data = {}
-            for c in cols:
-                v = ws.cell(rr, column_index_from_string(c.letter)).value
-                if v is None or (isinstance(v, str) and not v.strip()):
-                    continue
-                if c.kind in ("int", "float"):
-                    if not isnum(v):
-                        continue
-                    v = num(v)
-                elif c.key == "nam":
-                    v = str(int(num(v))) if isnum(v) else str(v).strip()
-                else:
-                    v = str(v).strip() if not isinstance(v, (int, float)) else (
-                        str(int(v)) if float(v).is_integer() else str(v))
-                data[c.key] = v
-            if not s(data.get(key.key)):
-                empty_run += 1
-                if empty_run > 20:
-                    break
-                continue
-            empty_run = 0
-            rows.append(data)
-        project.replace_rows(code, rows)
-        result[code] = len(rows)
-    return result
+def import_official(project, path: str, codes=None, mode="replace") -> dict:
+    """Nhập từ Bộ biểu Excel chính thức qua bộ kiểm soát lỗi (bỏ qua dòng lỗi, có sao lưu trước khi nhập)."""
+    from .importer import analyze, apply
+    rep = analyze(path, project, codes)
+    if rep.fatal:
+        raise ValueError("; ".join(i.message for i in rep.issues if i.level == "Không nhập được"))
+    ok = [c for c, r in rep.sheets.items() if r.found and r.structure_ok]
+    stats = apply(project, rep, ok, mode=mode, skip_errors=True)
+    return {c: v["added"] + v["updated"] for c, v in stats.items()}
 
 
 import_excel = import_official

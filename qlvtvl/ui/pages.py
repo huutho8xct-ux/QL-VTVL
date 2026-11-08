@@ -508,8 +508,10 @@ thì biểu liên quan tự cập nhật.</li>
 <i>Gợi ý nhân lực</i> (D1), <i>Tạo dự báo</i> và <i>Tạo phương án 2027–2031</i>.</li>
 <li><b>Bước 8:</b> kiểm tra tự động; nhấp đúp từng dòng để đến đúng chỗ cần sửa. Xuất <b>vào Bộ biểu Excel chính
 thức</b> (giữ nguyên công thức – phần mềm tự sửa các công thức lỗi của bản phát hành) và <b>báo cáo Word</b>.</li>
-<li><b>Tệp → Nhập từ Bộ biểu Excel</b>: kế thừa dữ liệu đã điền trong bộ biểu chính thức (kể cả do cơ quan đầu mối
-chuyển dữ liệu theo Công văn 1972, 2209, 2342-CV/BTCTW).</li>
+<li><b>Tệp → Nhập từ Bộ biểu Excel</b> (Ctrl+I): kế thừa dữ liệu đã điền trong bộ biểu chính thức. Phần mềm
+<b>kiểm tra lỗi trước khi nhập</b> (định dạng tệp, cấu trúc cột, kiểu số, danh sách chọn, năm, ô lỗi Excel, ô công
+thức bị nhập đè, trùng mã, mã chưa có ở biểu gốc), cho xem trước từng ô lỗi, tự sao lưu và cho phép
+<b>Tệp → Hoàn tác lần nhập gần nhất</b>.</li>
 <li>Dữ liệu tự lưu vào tệp hồ sơ <code>.vtvl</code>; dùng <b>Tệp → Lưu thành (sao lưu)</b> để giữ phiên bản.</li>
 </ol>
 <h3 style='color:#083C6B'>Nguyên tắc cần nhớ</h3>

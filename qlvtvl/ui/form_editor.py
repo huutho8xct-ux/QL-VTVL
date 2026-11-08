@@ -6,7 +6,7 @@ import re
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Qt, QTimer, Signal
 from PySide6.QtGui import QBrush, QColor, QFont, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
-    QAbstractItemView, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout, QHBoxLayout, QLabel,
+    QAbstractItemView, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout, QLabel,
     QLineEdit, QMessageBox, QPlainTextEdit, QPushButton, QScrollArea, QStyledItemDelegate, QTableView,
     QVBoxLayout, QWidget,
 )
@@ -692,20 +692,5 @@ class FormEditor(QWidget):
         self.project._notify("D1")
 
     def import_excel(self):
-        from ..core.exporter import import_official
-        path, _ = QFileDialog.getOpenFileName(self, f"Nhập Biểu {self.code} từ Bộ biểu Excel", "", "Excel (*.xlsx)")
-        if not path:
-            return
-        if QMessageBox.question(self, "Xác nhận",
-                                f"Dữ liệu hiện có của Biểu {self.code} sẽ được thay bằng dữ liệu trang "
-                                f"'{self.form.sheet}' trong tệp. Tiếp tục?") != QMessageBox.Yes:
-            return
-        try:
-            res = import_official(self.project, path, [self.code])
-        except Exception as e:  # noqa: BLE001
-            QMessageBox.critical(self, "Lỗi", f"Không đọc được tệp: {e}")
-            return
-        if self.code not in res:
-            QMessageBox.warning(self, "Không tìm thấy", f"Tệp không có trang tính '{self.form.sheet}'.")
-        else:
-            QMessageBox.information(self, "Hoàn tất", f"Đã nhập {res[self.code]} dòng.")
+        from .import_dialog import run_import
+        run_import(self, self.project, [self.code])

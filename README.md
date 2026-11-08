@@ -13,7 +13,7 @@ Phần mềm dùng **đúng tên cột, ký hiệu cột, danh sách lựa chọ
 
 **Yêu cầu:** Windows 10 hoặc 11, 64-bit. Không cần Python, không cần Internet, không cần quyền quản trị.
 
-1. Tải **`CaiDat_QL-VTVL_1.1.0.exe`** tại mục **Actions → Đóng gói bộ cài Windows →** lần chạy mới nhất **→ Artifacts → `QL-VTVL-Windows`** (hoặc tại mục **Releases** nếu đã phát hành).
+1. Tải **`CaiDat_QL-VTVL_1.2.0.exe`** tại mục **Actions → Đóng gói bộ cài Windows →** lần chạy mới nhất **→ Artifacts → `QL-VTVL-Windows`** (hoặc tại mục **Releases** nếu đã phát hành).
 2. Nhấp đúp tệp cài đặt và làm theo hướng dẫn. Nếu Windows SmartScreen cảnh báo, chọn **More info → Run anyway**: đây là phần mềm nội bộ, chưa ký số.
 3. Mở phần mềm từ biểu tượng **QL-VTVL**.
 
@@ -50,7 +50,24 @@ Kỳ thống kê là **01/10/2025 – 30/9/2026**. Nhân lực hiện có chốt
 - Liệt kê lỗi, cảnh báo và lưu ý từ các cột cảnh báo của Bộ biểu, cộng thêm kiểm tra liên kết giữa các biểu: mã chưa có, trùng mã, nhiệm vụ chưa phân rã, VTVL thiếu C2/C3, D2 chưa đủ 5 năm… Nhấp đúp vào từng dòng để đến đúng ô cần sửa.
 - **Xuất vào Bộ biểu Excel chính thức:** ghi các cột nhập liệu và giữ nguyên công thức, danh sách chọn, bảo vệ trang. Excel tự tính lại khi mở file.
 - **Báo cáo thuyết minh (Word):** gồm căn cứ, kết quả từng bước, bảng nhu cầu nhân lực, phương án 2027–2031 và **danh sách nội dung chưa đủ căn cứ** cần tiếp tục xử lý.
-- **Nhập từ Bộ biểu Excel:** kế thừa dữ liệu đã điền trong Bộ biểu chính thức, kể cả dữ liệu do cơ quan đầu mối chuyển theo Công văn 1972, 2209, 2342-CV/BTCTW.
+- **Nhập từ Bộ biểu Excel:** kế thừa dữ liệu đã điền trong Bộ biểu chính thức, kể cả dữ liệu do cơ quan đầu mối chuyển theo Công văn 1972, 2209, 2342-CV/BTCTW. Mọi tệp được **kiểm soát lỗi trước khi nhập** (xem mục dưới).
+
+### Kiểm soát lỗi khi nhập (upload) tệp biểu mẫu
+Chọn **Tệp → Nhập từ Bộ biểu Excel** (Ctrl+I) hoặc nút **Nhập từ bộ biểu** ở từng biểu. Phần mềm kiểm tra tệp trước, hiển thị kết quả để xem, và **chỉ ghi dữ liệu khi người dùng xác nhận**.
+
+| Lớp kiểm tra | Nội dung |
+|---|---|
+| **Tệp** | Sai định dạng (.xls, .csv, tệp đổi đuôi), tệp hỏng hoặc có mật khẩu, tệp rỗng, tệp không phải Bộ biểu VTVL, thiếu trang tham số, quỹ giờ trong tệp khác hồ sơ |
+| **Cấu trúc trang** | Tiêu đề cột (dòng 2) khác bộ biểu do bị chèn/xóa/đổi tên cột: **chặn không nhập trang đó** |
+| **Ô dữ liệu** | Chữ trong cột số; số âm; ô lỗi Excel (#REF!, #N/A…); năm ngoài 2027–2031; giá trị ngoài danh sách chọn; ô công thức (ô xám) bị nhập đè; nội dung quá dài; dòng có dữ liệu nhưng thiếu mã |
+| **Liên kết** | Trùng mã (hoặc trùng cặp VTVL – năm) trong trang; mã tham chiếu chưa có ở biểu gốc (A1, A2, C1, danh mục sản phẩm); vượt sức chứa 200 dòng |
+
+- **Tự chuẩn hóa:** chữ hoa/thường hoặc khoảng trắng thừa trong ô chọn (ví dụ “tiếp tục THỰC hiện” thành “Tiếp tục thực hiện”), mã Unicode tiếng Việt (dạng tổ hợp và dựng sẵn), ô ngày tháng chuyển thành dd/mm/yyyy, số kiểu Việt Nam (1.904; 2,5).
+- **Xem trước:** bảng tổng hợp từng biểu (số dòng đọc được, dòng lỗi, cảnh báo) và danh sách chi tiết gồm **ô, cột, giá trị, hướng xử lý**. Có thể xuất danh sách lỗi ra Excel để gửi lại người điền.
+- **Tùy chọn:** chọn biểu cần nhập; *thay thế toàn bộ* hoặc *bổ sung/cập nhật theo mã*; *bỏ qua các dòng có lỗi*. Nếu không chọn bỏ qua mà vẫn còn lỗi, nút Nhập bị khóa.
+- **An toàn:** tự **sao lưu hồ sơ** trước mỗi lần nhập (giữ 20 bản gần nhất trong thư mục dữ liệu, mục `SaoLuu`). Lệnh **Tệp → Hoàn tác lần nhập gần nhất** khôi phục lại trạng thái trước khi nhập.
+
+![Kiểm tra trước khi nhập](docs/images/kiem-tra-nhap.png)
 
 ![Kiểm tra](docs/images/kiem-tra.png)
 
@@ -89,13 +106,14 @@ python -m pytest tests        # kiểm thử
 
 **Tự đóng gói trên Windows:** cài Python 3.11+ (64-bit) và Inno Setup 6, rồi chạy `build_windows.bat`.
 
-**Tự động trên GitHub:** workflow `.github/workflows/build-windows.yml` kiểm thử, đóng gói, chạy thử `.exe` và tạo bộ cài. Gắn tag `v1.1.0` để phát hành vào mục Releases.
+**Tự động trên GitHub:** workflow `.github/workflows/build-windows.yml` kiểm thử, đóng gói, chạy thử `.exe` và tạo bộ cài. Gắn tag `v1.2.0` để phát hành vào mục Releases.
 
 ```
 qlvtvl/core/forms.py     Đặc tả biểu theo Bộ biểu 19-10-2026 (cột, ký hiệu cột, danh sách chọn)
 qlvtvl/core/calc.py      Mô phỏng công thức Excel (B1, B2, C1, C3, D1, dự báo, D2)
 qlvtvl/core/checks.py    Kiểm tra (Bước 8, Phụ lục VI)
-qlvtvl/core/exporter.py  Xuất/nhập Bộ biểu Excel chính thức (tự sửa công thức lỗi), báo cáo Word
+qlvtvl/core/exporter.py  Xuất Bộ biểu Excel chính thức (tự sửa công thức lỗi), báo cáo Word
+qlvtvl/core/importer.py  Kiểm soát lỗi khi nhập tệp: kiểm tra 3 lớp, xem trước, sao lưu, hoàn tác
 qlvtvl/core/guide.py     Nội dung 08 bước, căn cứ pháp lý
 qlvtvl/core/seed.py      Dữ liệu minh họa
 qlvtvl/assets/           Bộ biểu Excel 19-10-2026, biểu tượng

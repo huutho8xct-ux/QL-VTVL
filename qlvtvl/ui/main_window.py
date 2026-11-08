@@ -91,7 +91,8 @@ class MainWindow(QMainWindow):
         self._act(m, "Lưu thành (sao lưu)...", self.save_as, QKeySequence("Ctrl+Shift+S"))
         self._act(m, "Mở hồ sơ dữ liệu minh họa", self.open_sample)
         m.addSeparator()
-        self._act(m, "Nhập từ Bộ biểu Excel chính thức (đã điền)...", self.import_all)
+        self._act(m, "Nhập từ Bộ biểu Excel (kiểm tra lỗi trước khi nhập)...", self.import_all, QKeySequence("Ctrl+I"))
+        self._act(m, "Hoàn tác lần nhập gần nhất", self.undo_import)
         m.addSeparator()
         self._act(m, "Thoát", self.close, QKeySequence("Ctrl+Q"))
         x = mb.addMenu("&Xuất báo cáo")
@@ -380,21 +381,24 @@ class MainWindow(QMainWindow):
             self._open_folder(path)
 
     def import_all(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Nhập từ Bộ biểu Excel chính thức", "", "Excel (*.xlsx)")
-        if not path:
+        from .import_dialog import run_import
+        if run_import(self, self.project):
+            self.build_ui()
+
+    def undo_import(self):
+        from ..core.importer import undo_last_import
+        last = self.project.get_meta("last_import", "")
+        bk = self.project.get_meta("last_import_backup", "")
+        if not bk or not os.path.exists(bk):
+            QMessageBox.information(self, "Hoàn tác", "Không có lần nhập nào để hoàn tác.")
             return
-        if QMessageBox.question(self, "Xác nhận", "Dữ liệu các biểu có trong tệp sẽ thay thế dữ liệu hiện tại. "
-                                "Nên sao lưu hồ sơ trước. Tiếp tục?") != QMessageBox.Yes:
+        if QMessageBox.question(self, "Hoàn tác lần nhập",
+                                f"Khôi phục hồ sơ về trạng thái trước lần nhập: {last}?\n"
+                                "Mọi thay đổi sau lần nhập đó sẽ bị mất.") != QMessageBox.Yes:
             return
-        from ..core.exporter import import_official
-        try:
-            res = import_official(self.project, path)
-        except Exception as e:  # noqa: BLE001
-            QMessageBox.critical(self, "Lỗi", f"Không đọc được tệp: {e}")
-            return
+        undo_last_import(self.project)
         self.build_ui()
-        QMessageBox.information(self, "Hoàn tất", "Đã nhập: " + ", ".join(f"{k}: {v} dòng" for k, v in res.items())
-                                if res else "Không tìm thấy biểu nào đúng cấu trúc.")
+        QMessageBox.information(self, "Hoàn tác", "Đã khôi phục hồ sơ về trạng thái trước khi nhập.")
 
     @staticmethod
     def _open_folder(path):

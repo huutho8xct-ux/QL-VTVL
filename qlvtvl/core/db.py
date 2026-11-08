@@ -176,6 +176,15 @@ class Project:
             self._notify(form)
 
     # ----------------------------------------------------------------- backup
+    def restore_from(self, src: str):
+        """Khôi phục toàn bộ dữ liệu hồ sơ từ một bản sao lưu .vtvl."""
+        self.conn.commit()
+        b = sqlite3.connect(src)
+        with self.conn:
+            b.backup(self.conn)
+        b.close()
+        self._notify("*")
+
     def backup(self, dest: str):
         self.conn.commit()
         b = sqlite3.connect(dest)
