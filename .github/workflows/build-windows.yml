@@ -6,6 +6,11 @@ on:
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      phat_hanh:
+        description: "Tạo bản phát hành (Release) với tag v<phiên bản trong mã>"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -70,10 +75,20 @@ jobs:
           name: QL-VTVL-Windows
           path: dist/installer/*
 
-      - name: Phát hành (khi gắn tag v*)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Lấy số phiên bản
+        id: ver
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path qlvtvl\__init__.py -Pattern '__version__ = "(.+)"').Matches[0].Groups[1].Value
+          if ($env:GITHUB_REF -like 'refs/tags/v*') { $t = $env:GITHUB_REF_NAME } else { $t = "v$v" }
+          "tag=$t" >> $env:GITHUB_OUTPUT
+
+      - name: Phát hành (tag v* hoặc chạy thủ công có chọn phát hành)
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.phat_hanh)
         uses: softprops/action-gh-release@v2
         with:
-          name: QL-VTVL ${{ github.ref_name }} – Bộ cài Windows
+          tag_name: ${{ steps.ver.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: QL-VTVL ${{ steps.ver.outputs.tag }} – Bộ cài Windows
           body_path: docs/RELEASE_NOTES.md
           files: dist/installer/*
