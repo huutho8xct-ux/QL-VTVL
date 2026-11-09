@@ -57,6 +57,14 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path dist\QL-VTVL\* -DestinationPath dist\installer\QL-VTVL_portable.zip
 
+      - name: Tạo mã kiểm tra SHA-256
+        shell: pwsh
+        run: |
+          Get-ChildItem dist\installer -File | Where-Object Name -ne 'SHA256SUMS.txt' | ForEach-Object {
+            "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name
+          } | Set-Content -Encoding utf8 dist\installer\SHA256SUMS.txt
+          Get-Content dist\installer\SHA256SUMS.txt
+
       - uses: actions/upload-artifact@v4
         with:
           name: QL-VTVL-Windows
@@ -66,4 +74,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
+          name: QL-VTVL ${{ github.ref_name }} – Bộ cài Windows
+          body_path: docs/RELEASE_NOTES.md
           files: dist/installer/*
